@@ -1,0 +1,99 @@
+{
+  "$defs": {
+    "ModelConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "exclude_columns": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Exclude Columns",
+          "type": "array"
+        },
+        "split": {
+          "default": "random",
+          "enum": [
+            "random",
+            "group",
+            "chronological"
+          ],
+          "title": "Split",
+          "type": "string"
+        },
+        "split_column": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Split Column"
+        },
+        "target": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        },
+        "task": {
+          "enum": [
+            "classification",
+            "regression"
+          ],
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target",
+        "task"
+      ],
+      "title": "ModelConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Future command contract; no run-submission endpoint exists yet.",
+  "properties": {
+    "dataset_version_id": {
+      "format": "uuid",
+      "title": "Dataset Version Id",
+      "type": "string"
+    },
+    "disclosure_ack_version": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Disclosure Ack Version",
+      "type": "string"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "question": {
+      "default": "",
+      "maxLength": 2000,
+      "title": "Question",
+      "type": "string"
+    }
+  },
+  "required": [
+    "dataset_version_id",
+    "disclosure_ack_version"
+  ],
+  "title": "RunCreate",
+  "type": "object"
+}

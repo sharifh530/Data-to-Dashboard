@@ -1,0 +1,40 @@
+[project]
+name = "data-to-dashboard"
+version = "0.1.0"
+description = "Autonomous analyst service foundation"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi==0.141.1",
+    "uvicorn==0.53.0",
+    "pydantic-settings==2.15.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "httpx==0.28.1",
+    "ruff==0.16.8",
+    "mypy==2.3.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+pythonpath = ["services/api/src", "services/execution-broker/src"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = [".tools"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+mypy_path = ["services/api/src", "services/execution-broker/src"]
+files = ["services/api/src", "services/execution-broker/src"]

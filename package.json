@@ -1,0 +1,43 @@
+{
+  "name": "data-to-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.20.0 <25"
+  },
+  "scripts": {
+    "dev:api": "node scripts/python.mjs -m uvicorn dtd_api.main:app --app-dir services/api/src --host 127.0.0.1 --port 8000",
+    "dev:lab": "node scripts/renderer-lab.mjs",
+    "build": "node scripts/build-renderer.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test:unit": "node --import tsx --test tests/unit/*.test.ts",
+    "test:browser": "playwright test",
+    "test:python": "node scripts/python.mjs -m pytest",
+    "check:python": "node scripts/check-python.mjs",
+    "contracts:generate": "node scripts/python.mjs scripts/export-contracts.py && openapi-typescript packages/contracts/openapi.json -o packages/contracts/api.d.ts",
+    "contracts:check": "node scripts/check-contracts.mjs",
+    "sandbox:preflight": "node scripts/python.mjs scripts/sandbox-preflight.py",
+    "sandbox:probe": "node scripts/python.mjs scripts/sandbox-probe.py",
+    "check": "npm run lint && npm run typecheck && npm run test:unit && npm run check:python && npm run test:python && npm run contracts:check && npm run build"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
+    "eslint": "10.10.0",
+    "globals": "17.12.0",
+    "openapi-typescript": "7.13.0",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.0"
+  }
+}
