@@ -4,6 +4,8 @@ Last updated: 2026-09-17
 
 ## Implemented
 
+Uploadable test fixture: `samples/synthetic-sales-messy.csv` (245 rows, 11 columns, fictional sales with deliberate quality issues). Validated with the standard CSV reader; see samples/README.md. Actual upload inspection remains disabled.
+
 B12 local workspace UI now connects B05 raw storage and B06 synthetic runs to local authentication. The full autonomous analyst remains under construction; B05 inspection is still blocked.
 
 - Local-only FastAPI, 17 metadata tables/migrations, operator-issued login, hashed sessions, CSRF and owner-scoped projects.

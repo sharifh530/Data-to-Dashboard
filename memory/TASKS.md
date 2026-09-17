@@ -5,6 +5,7 @@ Last updated: 2026-09-17. Detailed scope/dependencies: [roadmap](../docs/ROADMAP
 | ID | Status | Deliverable / next action |
 | --- | --- | --- |
 | DOC-01 | DONE | Initial specification and memory package; see session log for validation |
+| SAMPLE-01 | DONE | Uploadable synthetic sales CSV: 245 rows/11 columns with deliberate quality issues; samples/README.md records validation. |
 | B01 | BLOCKED | Browser fixture tests pass; Python/runtime/resource verification needs working dedicated Linux + runsc. Preflight and fixed probe tooling ready. |
 | B02 | DONE | Local API/React lab scaffold, lockfiles, checks, CI definition, setup guide. Evidence: docs/evidence/2026-09-16-foundation.md. Product UI remains future work. |
 | B03 | DONE | Metadata models/migration, generated contracts, upgrade/downgrade recovery and PostgreSQL schema checks. Evidence: docs/evidence/2026-09-17-persistence-auth.md. |

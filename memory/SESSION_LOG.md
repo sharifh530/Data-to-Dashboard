@@ -55,3 +55,7 @@ Built reviewed React workspace on the same API origin, local ticket sign-in, pro
 Validation: npm run check passed (4 protocol tests, 53 Python passed/33 PostgreSQL skipped, lint/types/contracts/build); npm run test:postgres passed 86/86; npm run test:web passed real API Chromium journey, repeated after minor UI fixes with lint/types. Existing renderer suite unchanged, not rerun. No JavaScript page errors or mobile horizontal overflow. Two existing Python test-client warnings remain. See docs/evidence/2026-09-17-workspace-ui.md.
 
 Restarted only the verified project API process; new server on 127.0.0.1:8000, process 11388 at time of startup. PostgreSQL verified. No normal worker started. Next priority: establish a verified hardened execution environment and implement actual file inspection, rather than expanding synthetic workflows. Standing authorization covers milestone commit/push.
+
+## 2026-09-17 — Uploadable sample dataset
+
+Created samples/synthetic-sales-messy.csv at user request: 245 rows, 11 columns, 17,418 bytes of fictional sales. Includes five exact duplicates, missing values, case/whitespace differences and currency formatting. Python CSV roundtrip verified row/field counts, 240 distinct order IDs and positive revenue. samples/README.md explains contents and the constructed target limitation. No application code changed; application tests were not rerun. Upload inspection remains disabled. Published under standing repository authorization.
