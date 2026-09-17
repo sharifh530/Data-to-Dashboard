@@ -44,6 +44,8 @@ def test_probe_policy_cannot_inject_options_or_use_mutable_image() -> None:
     assert "--runtime=runsc" in command
     assert "--network=none" in command
     assert "--read-only" in command
+    assert "--pids-limit=128" in command
+    assert "--ulimit=nproc=32:32" in command
     assert "--privileged" not in command
     assert not any(value.startswith(("--volume", "--mount", "--env")) for value in command)
 

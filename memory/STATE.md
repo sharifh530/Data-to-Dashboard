@@ -15,6 +15,7 @@ B12 local workspace UI now connects B05 raw storage and B06 synthetic runs to lo
 - Generated contracts, lockfiles, checks and CI definition; React isolation lab; runtime preflight/fixed probe tooling.
 - See docs/RUN_PROCESSING.md and docs/PERSISTENCE_AND_AUTH.md for actual behavior.
 - Dedicated `dtd-sandbox` WSL2 Ubuntu environment, Docker 29.1.3 and runsc 20260914.0. Eight actual isolation probes plus writable-root negative control passed. Runbook: docs/SANDBOX_WSL.md. Application execution remains disabled.
+- Seven actual resource/termination probes now pass: scratch, guest processes, memory OOM, output cap, CPU throttling, deadline and cancellation with child processes. Policy now separates 128 host tasks / 32 guest processes; output readers discard excess while draining to prevent Docker attach hangs.
 
 ## Validation
 
@@ -22,7 +23,7 @@ npm run check passed: 4 protocol tests, 53 Python passed/33 PostgreSQL skipped, 
 
 ## Limitations
 
-B01 is now partial, not runtime-blocked: dedicated WSL gVisor is available and basic probes pass. Resource/exhaustion, cancellation/termination, adversarial parser tests and broker integration remain. Raw files still await isolated inspection. Hosted identity, parsing, production storage, LangChain/LangGraph, modeling, generated execution/builds and analysis/dashboard screens remain unimplemented. No hosted deployment or paid service exists.
+B01 is partial: basic isolation and fixed resource/termination probes pass. Adversarial parser tests, broker-death recovery, production broker and API cancellation integration remain. Raw files still await isolated inspection. Hosted identity, parsing, production storage, LangChain/LangGraph, modeling, generated execution/builds and analysis/dashboard screens remain unimplemented. No hosted deployment or paid service exists.
 
 ## Source control and local services
 
@@ -32,7 +33,7 @@ Project-owned PostgreSQL listens on 127.0.0.1:55432; ignored .local/postgres/dat
 
 ## Next concrete action
 
-Extend the real dtd-sandbox probes to resource limits and whole-container timeout/cancellation cleanup, then implement bounded isolated CSV/SQLite inspection and broker/result validation. Use `npm run sandbox:wsl -- sync` / `preflight` / `probe --image <digest>`; ordinary Windows Docker context still lacks runsc. Pinned image/version evidence: docs/evidence/2026-09-17-wsl-sandbox.md. Never parse uploads or execute generated code on the API/developer host. Hosted release still requires B04H.
+Implement bounded isolated CSV/SQLite inspection with safe input transfer and validated bounded results; run adversarial parser fixtures in gVisor. Integrate the tested termination behavior into the actual broker with crash recovery, then expose inspection/preview in the UI. Use sandbox:wsl sync/preflight/probe/resources against dtd-sandbox, not the Windows Docker context. Resource evidence: docs/evidence/2026-09-17-resource-probes.md. Never parse uploads or execute generated code on the API/developer host. Hosted release still requires B04H.
 
 ## Open decisions
 

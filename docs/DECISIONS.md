@@ -25,6 +25,8 @@ Foundation update: React/TypeScript, FastAPI, npm, uv, and the isolated fixture 
 
 ## Template for future decisions
 
+ADR-021, accepted 2026-09-17 from measured resource probes: distinguish gVisor host task allowance (128) from guest RLIMIT_NPROC (32). A 32-task host cap killed the runtime; a separate guest cap returned EAGAIN as intended. Resource acceptance uses reduced CPU/RAM/tmpfs budgets to verify exhaustion safely. This supersedes the undifferentiated 64-process probe default, not the future analysis capacity specification. Output readers drain/discard after the retention cap so termination does not hang on Docker attach. Evidence: docs/evidence/2026-09-17-resource-probes.md.
+
 ADR-020, accepted 2026-09-17 after explicit user choice: provision dedicated project WSL2 distribution dtd-sandbox with its own Docker Engine and gVisor. Disable drive automount and Windows interoperability, use explicit WSL commands, and transfer only reviewed probe sources. This resolves local runsc availability without modifying Docker Desktop. It is development infrastructure sharing WSL host resources, not a hosted isolation guarantee. Basic probes passed; resource/termination and broker integration remain required. See docs/SANDBOX_WSL.md.
 
 ADR-019, accepted 2026-09-17: serve reviewed React workspace assets from the local API origin for same-origin session/CSRF behavior. Explicit asset allowlisting and restrictive CSP separate this shell from the generated renderer lab. The first UI polls active runs at two-second intervals; SSE is retained as an API capability. This is a local B12 slice, not hosted authentication or generated dashboard integration. Evidence: docs/evidence/2026-09-17-workspace-ui.md.

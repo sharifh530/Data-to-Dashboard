@@ -54,7 +54,7 @@ def run_probe(image: str) -> dict[str, object]:
             while chunk := stream.read(4096):
                 if len(output) + len(chunk) > 65536:
                     overflow.set()
-                    return
+                    continue
                 output.extend(chunk)
 
         reader = threading.Thread(target=read_output, daemon=True)

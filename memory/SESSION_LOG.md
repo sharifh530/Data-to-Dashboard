@@ -67,3 +67,11 @@ Docker Desktop became reachable but lacked runsc. User explicitly selected creat
 Added sandbox:wsl wrapper for allowlisted reviewed source sync and fixed preflight/probe. Built pinned Python probe image, passed all eight real isolation checks under runsc. Tightened read-only check to require EROFS on a world-writable image file; negative control without read-only was correctly rejected. No dtd-probe containers remained. Generated execution remains false. B01 now PARTIAL; resource/termination and broker/parser integration remain.
 
 Validation: nine execution unit tests passed; npm run check passed (four protocol tests; Python 53 passed/33 PostgreSQL skipped; lint/types/contracts/build). Prior PostgreSQL/browser suites unchanged, not rerun. Versions/digests, reproducible commands and limits are in docs/SANDBOX_WSL.md and dated evidence. Next: real resource/timeout/cancel tests, then isolated CSV/SQLite inspection. Authorized milestone commit/push follows.
+
+## 2026-09-17 — Real resource and termination acceptance
+
+Added fixed bounded gVisor resource image and sandbox:wsl resources command. Seven real cases pass: tmpfs ENOSPC, guest fork EAGAIN, memory OOM kill, retained output cap, observed cgroup CPU throttling, deadline kill and cancellation of parent plus children. Repeated all eight basic isolation checks under final policy; no probe containers remain. Limits separate 128 host tasks from guest RLIMIT_NPROC 32 (ADR-021).
+
+Found and fixed two issues: 32 host tasks caused runtime exit rather than controlled guest fork failure; output flood blocked Docker attach after kill because the reader stopped draining. Excess data is now discarded while draining, retaining at most 64 KiB. Actual final suite passed; image digest and measured evidence in docs/evidence/2026-09-17-resource-probes.md.
+
+npm run check passed: four JS tests, 53 Python passed/33 PostgreSQL skipped, lint/format/types/contracts/build. Unchanged PostgreSQL/browser suites not rerun. Two existing upstream warnings and Docker legacy-builder warning remain. B01 stays partial for adversarial parser and broker-death/integration checks. Next: bounded isolated CSV/SQLite inspector with safe transfer/results and application integration; no upload parsing or arbitrary execution enabled by this milestone. Standing authorization covers commit/push.

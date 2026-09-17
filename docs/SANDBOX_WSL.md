@@ -34,4 +34,15 @@ To stop just this runtime, use `wsl --terminate dtd-sandbox`. This stops any wor
 
 ## Remaining gate
 
-Basic probes cover non-root, genuinely read-only root, IPv4/IPv6/metadata/DNS denial, no Docker socket and no provider keys. A writable-root negative control was rejected. Probe containers were removed. CPU, RAM, PID, scratch/output exhaustion, timed-out/cancelled process cleanup, adversarial parsers and actual data transfer/result validation remain to be tested. Next work must implement those tests, then isolated CSV/SQLite inspection; do not enable arbitrary code based on these basic checks alone.
+Resource milestone update: seven real CPU/memory/process/disk/output/deadline/cancellation cases now pass. See [resource evidence](evidence/2026-09-17-resource-probes.md). Rebuild/run with:
+
+```powershell
+npm run sandbox:wsl -- sync
+wsl -d dtd-sandbox -u root --cd /opt/dtd -- docker build --build-arg BASE_IMAGE=python@sha256:9d2e5553305c7c7b0097999bb17187c69b921ccd6bc9d40e4bb5ebe652c00285 --iidfile /opt/dtd/resource-image-id sandbox/resources
+$resourceImage = (wsl -d dtd-sandbox -u root --cd / -- cat /opt/dtd/resource-image-id).Trim()
+npm run sandbox:wsl -- resources --image $resourceImage
+```
+
+The wrapper now also transfers the reviewed resource exercises. They must never be invoked directly on the developer host. Bounded stress limits are defined in scripts/sandbox-resources.py; the suite refuses to run without registered runsc. Policy distinguishes 128 runtime host tasks from 32 guest processes. Arbitrary-code admission is unchanged.
+
+Basic and resource probes pass, including cleanup of running children. Next work is bounded isolated CSV/SQLite inspection, adversarial parser fixtures, safe data/result transfer, API cancellation integration and recovery after abrupt broker death. Do not enable arbitrary code based on fixed probes alone.
