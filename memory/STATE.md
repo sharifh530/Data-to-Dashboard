@@ -14,6 +14,7 @@ B12 local workspace UI now connects B05 raw storage and B06 synthetic runs to lo
 - PostgreSQL transactional outbox/work items, fenced leases, bounded recovery/checkpoints, synthetic run admission/history/detail, SSE replay/snapshot and cancellation.
 - Generated contracts, lockfiles, checks and CI definition; React isolation lab; runtime preflight/fixed probe tooling.
 - See docs/RUN_PROCESSING.md and docs/PERSISTENCE_AND_AUTH.md for actual behavior.
+- Dedicated `dtd-sandbox` WSL2 Ubuntu environment, Docker 29.1.3 and runsc 20260914.0. Eight actual isolation probes plus writable-root negative control passed. Runbook: docs/SANDBOX_WSL.md. Application execution remains disabled.
 
 ## Validation
 
@@ -21,7 +22,7 @@ npm run check passed: 4 protocol tests, 53 Python passed/33 PostgreSQL skipped, 
 
 ## Limitations
 
-B01 remains blocked from the last preflight: DOCKER_UNAVAILABLE. Raw files await isolated inspection. Hosted identity, parsing, production storage, LangChain/LangGraph, modeling, generated execution/builds and analysis/dashboard screens remain unimplemented. Actual executor cancellation is future integration. No hosted deployment or paid service exists.
+B01 is now partial, not runtime-blocked: dedicated WSL gVisor is available and basic probes pass. Resource/exhaustion, cancellation/termination, adversarial parser tests and broker integration remain. Raw files still await isolated inspection. Hosted identity, parsing, production storage, LangChain/LangGraph, modeling, generated execution/builds and analysis/dashboard screens remain unimplemented. No hosted deployment or paid service exists.
 
 ## Source control and local services
 
@@ -31,7 +32,7 @@ Project-owned PostgreSQL listens on 127.0.0.1:55432; ignored .local/postgres/dat
 
 ## Next concrete action
 
-Resolve B01 dedicated Linux Docker/runsc for B05 isolated inspection, selection and preview. Raw storage and basic authenticated UI are now complete; do not continue adding synthetic features as a substitute for the core analyst. Establish a verified execution environment, then implement actual inspection. Never parse uploads or execute generated code on the API/developer host. Hosted release still requires B04H.
+Extend the real dtd-sandbox probes to resource limits and whole-container timeout/cancellation cleanup, then implement bounded isolated CSV/SQLite inspection and broker/result validation. Use `npm run sandbox:wsl -- sync` / `preflight` / `probe --image <digest>`; ordinary Windows Docker context still lacks runsc. Pinned image/version evidence: docs/evidence/2026-09-17-wsl-sandbox.md. Never parse uploads or execute generated code on the API/developer host. Hosted release still requires B04H.
 
 ## Open decisions
 

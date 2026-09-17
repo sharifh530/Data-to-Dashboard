@@ -59,3 +59,11 @@ Restarted only the verified project API process; new server on 127.0.0.1:8000, p
 ## 2026-09-17 — Uploadable sample dataset
 
 Created samples/synthetic-sales-messy.csv at user request: 245 rows, 11 columns, 17,418 bytes of fictional sales. Includes five exact duplicates, missing values, case/whitespace differences and currency formatting. Python CSV roundtrip verified row/field counts, 240 distinct order IDs and positive revenue. samples/README.md explains contents and the constructed target limitation. No application code changed; application tests were not rerun. Upload inspection remains disabled. Published under standing repository authorization.
+
+## 2026-09-17 — Dedicated WSL2 gVisor runtime
+
+Docker Desktop became reachable but lacked runsc. User explicitly selected creating a separate project WSL2 environment. Imported official pinned Ubuntu 24.04 filesystem into ignored .local/wsl/dtd-sandbox, installed Docker 29.1.3 and runsc 20260914.0 from signed package repositories, enabled systemd and disabled drive automount/fstab/Windows interoperability only in dtd-sandbox. Existing Docker Desktop was unchanged. No unauthenticated daemon TCP socket opened. First systemd start failed because the shell package install consumed remaining stdin; wrote wsl.conf explicitly, restarted only the project distribution, and verified systemd/mounts.
+
+Added sandbox:wsl wrapper for allowlisted reviewed source sync and fixed preflight/probe. Built pinned Python probe image, passed all eight real isolation checks under runsc. Tightened read-only check to require EROFS on a world-writable image file; negative control without read-only was correctly rejected. No dtd-probe containers remained. Generated execution remains false. B01 now PARTIAL; resource/termination and broker/parser integration remain.
+
+Validation: nine execution unit tests passed; npm run check passed (four protocol tests; Python 53 passed/33 PostgreSQL skipped; lint/types/contracts/build). Prior PostgreSQL/browser suites unchanged, not rerun. Versions/digests, reproducible commands and limits are in docs/SANDBOX_WSL.md and dated evidence. Next: real resource/timeout/cancel tests, then isolated CSV/SQLite inspection. Authorized milestone commit/push follows.

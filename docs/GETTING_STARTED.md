@@ -73,6 +73,8 @@ OpenAPI types cover health/capability, authentication, project and synthetic run
 
 ## Synthetic Python probe on prepared Linux
 
+A project-specific WSL2/gVisor environment is now installed locally. Use [the sandbox runbook](SANDBOX_WSL.md) and `npm run sandbox:wsl -- preflight`; ordinary Windows Docker-context preflight still reports RUNSC_MISSING. Basic probes pass, but execution admission remains disabled pending remaining tests/integration.
+
 Docker must expose a Linux engine with `runsc` configured using the [gVisor guide](https://gvisor.dev/docs/user_guide/quick_start/docker/). Do not substitute ordinary runc. Runtime installation and daemon policy changes have not been performed here.
 
 Build the probe with a reviewed Python 3.13 base pinned by a real digest. Example PowerShell commands after substituting that digest:

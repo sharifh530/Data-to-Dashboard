@@ -3,6 +3,7 @@
 This file is never imported by the API or test suite. It is not generated code.
 """
 
+import errno
 import json
 import os
 import socket
@@ -21,9 +22,9 @@ def cannot_connect(family: int, address: tuple[str, int]) -> bool:
 
 def root_is_read_only() -> bool:
     try:
-        Path("/dtd-write-probe").write_text("probe", encoding="utf-8")
-    except OSError:
-        return True
+        Path("/opt/dtd-readonly-check").write_text("probe", encoding="utf-8")
+    except OSError as error:
+        return error.errno == errno.EROFS
     return False
 
 

@@ -27,6 +27,7 @@
     "contracts:check": "node scripts/check-contracts.mjs",
     "sandbox:preflight": "node scripts/python.mjs scripts/sandbox-preflight.py",
     "sandbox:probe": "node scripts/python.mjs scripts/sandbox-probe.py",
+    "sandbox:wsl": "node scripts/python.mjs scripts/sandbox-wsl.py",
     "check": "npm run lint && npm run typecheck && npm run test:unit && npm run check:python && npm run test:python && npm run contracts:check && npm run build"
   },
   "dependencies": {
