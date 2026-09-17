@@ -1,6 +1,6 @@
 # Architecture
 
-Status: target architecture with a local foundation implemented. Health/capability API, execution policy/preflight, and the React bridge lab exist; production services below remain planned unless explicitly noted. See [getting started](GETTING_STARTED.md).
+Status: local API, PostgreSQL metadata/migrations, operator-issued authentication, owner-scoped project APIs, runtime preflight, and React bridge lab exist. Queue, analysis, artifact storage, and hosted services remain planned. See [persistence/auth](PERSISTENCE_AND_AUTH.md).
 
 ## Service responsibilities
 

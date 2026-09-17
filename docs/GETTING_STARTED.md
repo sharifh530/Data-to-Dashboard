@@ -1,6 +1,6 @@
 # Running the foundation
 
-Implemented on 2026-09-16: local FastAPI service, executable contracts, React isolation lab, test suites, and runtime preflight. This is not yet the upload/analysis application. No account, API key, database, or external LLM is needed.
+Implemented through 2026-09-17: API, PostgreSQL migrations, local authenticated projects, contracts, React isolation lab, tests, and runtime preflight. This is not yet the upload/analysis application. The lab needs no database; project APIs require a migrated database and operator-issued login. No external LLM key is needed. See [database/auth setup](PERSISTENCE_AND_AUTH.md).
 
 ## Installation
 
@@ -65,7 +65,7 @@ npm run contracts:generate
 npm run contracts:check
 ```
 
-OpenAPI types cover implemented health/capability routes. `run-create.schema.json` is a draft future input contract; no submission endpoint exists.
+OpenAPI types cover health/capability, authentication, and project routes. `run-create.schema.json` remains a draft future input contract; no run-submission endpoint exists. Use `npm run test:postgres` for real database parity/concurrency tests.
 
 ## Synthetic Python probe on prepared Linux
 

@@ -1,5 +1,13 @@
 # Session log
 
+## 2026-09-17 — PostgreSQL persistence and local authentication
+
+Implemented B03 and the local B04 scope: 15 SQLAlchemy metadata tables, initial Alembic revision, composite project/run lineage constraints, local one-time login, hashed sessions, origin/CSRF checks, owner-scoped project create/list/read, idempotency and pagination. Added setup/provisioning helpers, generated OpenAPI/types, and PostgreSQL CI service. Hosted sign-in is separately tracked as B04H; no hosted/provider integration is claimed.
+
+Found PostgreSQL 17.6 binaries and created a project-owned loopback cluster in ignored `.local`. It uses port 55432 and dedicated development/test databases without altering the existing system service. Credentials were generated into ignored local files and never printed. A Windows inherited-pipe startup hang was fixed with file-based child output. After the local server stopped between sessions, restarted it and added five-second connection timeouts; reran verification successfully.
+
+Validation: `npm run check` passes lint/format/types/contracts/build and 4 protocol tests; default Python 35 passed/12 explicit PostgreSQL skips. `npm run test:postgres` passes all 47 Python cases, including real concurrency and migration recovery. `npm run db:check` shows no drift. Two pre-existing upstream test-client warnings remain. No frontend behavior changed, so existing browser tests were not repeated. Update/commit/push this milestone to the authorized origin; verify remote hash. Next: B06 orchestration while resolving B01 for safe ingestion/execution.
+
 ## 2026-09-17 — GitHub repository and milestone push policy
 
 The user provided `https://github.com/sharifh530/Data-to-Dashboard.git` and authorized pushes after each major task. Remote inspection returned no existing refs. Initialized local `main`, configured `origin`, and fetched before preparing the foundation commit. Recorded the standing push authorization in AGENTS.md and updated current setup/state documentation. Prior foundation validation remains applicable; this session changes source-control documentation only. Publication is recorded in Git history; verify remote HEAD after pushing. Generated artifacts, dependencies, virtual environments, and secrets remain excluded through `.gitignore`.

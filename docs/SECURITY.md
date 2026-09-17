@@ -2,6 +2,8 @@
 
 This is a release-blocking specification, not a claim of an audited implementation.
 
+Implementation note (2026-09-17): local server-side sessions, origin/CSRF checks, hashed single-use tickets, and project ownership are tested on SQLite and PostgreSQL. HTTPS uses Secure host-only cookies; loopback HTTP has a local-only cookie exception. Hosted identity, throttling, and production roles remain B04H/B14 prerequisites. See [current auth design](PERSISTENCE_AND_AUTH.md); none of this enables generated execution.
+
 ## Threat model
 
 | Threat | Required controls | Verification |

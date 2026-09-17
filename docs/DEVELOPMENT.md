@@ -6,7 +6,7 @@ Local foundation implemented. See [Getting started](GETTING_STARTED.md) for exec
 
 ## Planned prerequisites and configuration
 
-Use Node with npm, Python with uv, and Linux for sandbox work. Node 24.20.0 and Python 3.13.7 are pinned; analytics compatibility is checked when introduced. npm is used because the available pnpm shim reported npm's version. Git uses the user-provided GitHub remote; PostgreSQL, Redis, and object storage are not configured yet.
+Use Node with npm, Python with uv, and Linux for sandbox work. Node 24.20.0 and Python 3.13.7 are pinned. Git uses the supplied remote. A project-owned PostgreSQL 17.6 cluster now exists; Redis and object storage remain unconfigured. Actual database settings are `DTD_DATABASE_URL` and `DTD_APP_ORIGIN`; other keys below remain proposals.
 
 Planned environment keys: `DATABASE_URL`, `REDIS_URL`, `OBJECT_STORE_ENDPOINT`, `OBJECT_STORE_BUCKET`, scoped storage credentials, `SESSION_SECRET`, auth provider settings, `LLM_PROVIDER`, `LLM_MODEL`, provider secret, `EXECUTION_BROKER_URL`, broker authentication, `RENDERER_ORIGIN`, upload/runtime limits, retention settings, telemetry opt-in. Commit only placeholder `.env.example` values once code defines the real configuration. Validate configuration at startup; reject unsafe hosted execution profiles.
 

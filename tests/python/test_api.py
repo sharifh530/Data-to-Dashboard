@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 
 def test_health_is_distinct_from_analysis_readiness() -> None:
-    with TestClient(create_app(Settings(environment="local"))) as client:
+    with TestClient(create_app(Settings(environment="local", database_url=None))) as client:
         assert client.get("/health/live").json()["status"] == "ok"
         ready = client.get("/health/ready")
         assert ready.status_code == 503
@@ -22,13 +22,13 @@ def test_hosted_startup_fails_closed() -> None:
 
 def test_no_execution_enable_environment_backdoor(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DTD_EXECUTION_ENABLED", "true")
-    with TestClient(create_app(Settings(environment="local"))) as client:
+    with TestClient(create_app(Settings(environment="local", database_url=None))) as client:
         assert client.get("/api/v1/capabilities").json()["execution_enabled"] is False
         assert client.post("/api/v1/runs", json={"source": "print(123)"}).status_code == 404
 
 
 def test_response_headers_do_not_trust_client_request_id() -> None:
-    with TestClient(create_app(Settings(environment="local"))) as client:
+    with TestClient(create_app(Settings(environment="local", database_url=None))) as client:
         result = client.get("/health/live", headers={"X-Request-ID": "untrusted"})
         assert result.headers["X-Request-ID"] != "untrusted"
         assert result.headers["Cache-Control"] == "no-store"

@@ -42,7 +42,8 @@ class Capabilities(Contract):
     mode: Literal["foundation"] = "foundation"
     uploads_enabled: Literal[False] = False
     execution_enabled: Literal[False] = False
-    persistence_enabled: Literal[False] = False
+    persistence_enabled: bool = False
+    local_auth_enabled: bool = False
     reason: str = "Execution requires a verified broker, isolation evidence, and authentication."
 
 

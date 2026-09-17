@@ -2,9 +2,11 @@
 
 An autonomous analyst that turns messy CSV or SQLite data into a cleaned dataset, an explainable baseline predictive model when appropriate, and a custom interactive React dashboard.
 
-**Status: foundation implemented; full analyst application not yet implemented.** A local FastAPI service, executable contracts, React isolation lab, automated checks, and fail-closed runtime preflight are runnable. Uploads, analysis, and generated Python execution remain disabled.
+**Status: persistence and local authentication implemented; full analyst application not yet implemented.** PostgreSQL migrations, authenticated project creation/listing, contracts, React isolation lab, and runtime preflight are runnable. Uploads, analysis, and generated Python execution remain disabled.
 
 Use [Getting started](docs/GETTING_STARTED.md) to run the foundation and [verification evidence](docs/evidence/2026-09-16-foundation.md) for tested behavior and blockers.
+
+Current milestone: [Persistence and local authentication](docs/PERSISTENCE_AND_AUTH.md) and [verification evidence](docs/evidence/2026-09-17-persistence-auth.md).
 
 ## Read first
 
@@ -35,4 +37,4 @@ Use [Getting started](docs/GETTING_STARTED.md) to run the foundation and [verifi
 
 A user uploads data, reviews the detected schema, optionally chooses a prediction target, and starts an analysis. A bounded LangChain/LangGraph workflow writes and executes Pandas code, validates artifacts, evaluates a baseline, and generates a dashboard. The user can inspect transformations, filter charts, see model limitations, and download results. Invalid generated UI falls back to a validated dashboard specification.
 
-The foundation uses React + TypeScript and FastAPI. LangChain/LangGraph, Pandas/scikit-learn, PostgreSQL, a durable queue, and S3-compatible storage remain planned. Foundation versions are locked; providers remain undecided. Public generated-code execution requires the documented security gates.
+The foundation uses React + TypeScript, FastAPI, SQLAlchemy/Alembic, and PostgreSQL. LangChain/LangGraph, Pandas/scikit-learn, a durable queue, and S3-compatible storage remain planned. Versions are locked; hosted providers remain undecided. Public generated-code execution requires the documented security gates.

@@ -1,6 +1,6 @@
 # Implementation roadmap and backlog
 
-Status: B02 foundation scaffold is complete; B01 browser proof is partial and Python runtime verification is blocked by the unavailable engine. Other packages remain TODO; draft B03 schemas are seeded. See `memory/TASKS.md`. Priorities: P0 MVP, P1 later. Sequence is dependency-based, not a date commitment. Public deployment remains gated by security evidence.
+Status: B02 and B03 complete; B04 local authentication/project ownership implemented, with hosted identity explicitly tracked as B04H. B01 Python runtime verification remains blocked. See `memory/TASKS.md`. Priorities: P0 MVP, P1 later. Public deployment remains gated by security evidence.
 
 | ID | Priority | Work package | Depends on | Exit evidence |
 | --- | --- | --- | --- | --- |
@@ -8,6 +8,7 @@ Status: B02 foundation scaffold is complete; B01 browser proof is partial and Py
 | B02 | P0 | Repository/toolchain scaffold | — | Pinned frontend/backend deps, lint/type/test commands, CI, environment template, reproducible local setup |
 | B03 | P0 | Contracts, metadata schema, migrations | B02 | Executable schemas and generated TS types; migrate clean DB and rollback/recovery check |
 | B04 | P0 | Authentication/project ownership | B03 | Two-user isolation tests, secure session and CSRF handling |
+| B04H | P0 hosted release | Hosted identity provider, abuse controls and sign-in/recovery integration | B04 | Verified external identity, HTTPS-only cookies, authentication throttling and hosted session/browser tests; required before B14 public release |
 | B05 | P0 | Upload, isolated CSV/SQLite inspection | B01–B04 | Supported/malformed fixtures, byte/row limits, table selection and preview |
 | B06 | P0 | Queue/outbox, state machine, SSE, cancellation | B03–B04 | Reconnect, duplicate-delivery, restart, cancel/publication-race tests |
 | B07 | P0 | Deterministic profiling and artifact pipeline | B05–B06 | Profile correctness, immutable manifest, safe collector tests |

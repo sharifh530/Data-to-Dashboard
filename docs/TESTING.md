@@ -1,6 +1,6 @@
 # Verification and acceptance plan
 
-Foundation checks passed: 24 Python tests, 4 protocol tests, and 5 Chromium tests. See [evidence](evidence/2026-09-16-foundation.md). The full product matrix below remains required; foundation tests do not satisfy ingestion/modeling/public-release requirements.
+Persistence/auth milestone adds database parity and concurrency checks; see [current evidence](evidence/2026-09-17-persistence-auth.md). Previous renderer checks are recorded in [foundation evidence](evidence/2026-09-16-foundation.md). The full product matrix below remains required; these checks do not satisfy ingestion/modeling/public-release requirements.
 
 ## Test layers
 

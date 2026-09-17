@@ -1,14 +1,15 @@
 # Task status ledger
 
-Last updated: 2026-09-16. Detailed scope/dependencies: [roadmap](../docs/ROADMAP.md).
+Last updated: 2026-09-17. Detailed scope/dependencies: [roadmap](../docs/ROADMAP.md).
 
 | ID | Status | Deliverable / next action |
 | --- | --- | --- |
 | DOC-01 | DONE | Initial specification and memory package; see session log for validation |
 | B01 | BLOCKED | Browser fixture tests pass; Python/runtime/resource verification needs working dedicated Linux + runsc. Preflight and fixed probe tooling ready. |
 | B02 | DONE | Local API/React lab scaffold, lockfiles, checks, CI definition, setup guide. Evidence: docs/evidence/2026-09-16-foundation.md. Product UI remains future work. |
-| B03 | TODO | Draft schemas/types exist; implement persistence models, migrations, and complete executable contracts. |
-| B04 | TODO | Authentication and ownership |
+| B03 | DONE | Metadata models/migration, generated contracts, upgrade/downgrade recovery and PostgreSQL schema checks. Evidence: docs/evidence/2026-09-17-persistence-auth.md. |
+| B04 | DONE | Local operator-issued login, hashed sessions, CSRF, project ownership and concurrent idempotency tests. Hosted authentication is B04H, not completed. |
+| B04H | TODO | Required before hosted release: identity provider, abuse controls, HTTPS/browser sign-in and recovery integration. |
 | B05 | TODO | Upload/CSV/SQLite inspection |
 | B06 | TODO | Durable queue, run states, SSE, cancellation |
 | B07 | TODO | Profiling and validated artifacts |

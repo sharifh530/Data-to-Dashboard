@@ -1,6 +1,6 @@
 # API and persistence specification
 
-Target `/api/v1` contracts. Only `/health/live`, `/health/ready`, and `/api/v1/capabilities` are implemented, with generated OpenAPI/TypeScript. `packages/contracts/run-create.schema.json` independently validates the draft run command. Product endpoints below and database migrations remain planned.
+Target `/api/v1` contracts. Implemented: health/capabilities, local `/auth/exchange`, `/auth/session`, `/auth/logout`, and project create/list/read. Initial metadata migrations and generated OpenAPI/TypeScript exist. Remaining data/run/export/deletion endpoints below are planned. See [persistence/auth](PERSISTENCE_AND_AUTH.md) for current behavior and local cookie policy.
 
 ## Common conventions
 
@@ -14,6 +14,7 @@ Mutation idempotency keys are scoped to owner + route, retained 24 hours, and ti
 | --- | --- | --- |
 | POST /projects | name | 201 project |
 | GET /projects | cursor | owned projects |
+| GET /projects/{id} | — | owned, nondeleted project or 404 |
 | POST /projects/{id}/datasets | streamed multipart file | 202 dataset in validating state; enforce streaming byte limit |
 | GET /datasets/{id} | — | validation status, tables, warnings |
 | POST /datasets/{id}/selection | table, optional CSV parse overrides | 202 immutable selected dataset version; reject selection changes during run by creating new version |
@@ -51,11 +52,11 @@ Setting `model` to null requests exploratory analysis only. A question does not 
 | --- | --- |
 | users | id, auth_subject (unique), created_at |
 | projects | id, owner_id, name, deleted_at |
-| datasets | id, project_id, raw_artifact_id, detected_format, status, deleted_at |
+| datasets | id, project_id, raw_key, raw_sha256, format, status, deleted_at; raw reference lives here to avoid circular artifact linkage |
 | dataset_versions | id, dataset_id, selected_table/parse_options, schema_hash, profile_ref; immutable |
 | runs | id, project_id, dataset_version_id, config_json, status, stage, generation, cancellation_at, timestamps, budget_json |
 | stage_attempts | id, run_id, stage, attempt_number, lease expiry, runtime_id, status; unique attempt identity |
-| artifacts | id, run_id or dataset_id, kind, private_key, sha256, bytes, schema_version, validated_at, deletion_state |
+| artifacts | id, project_id, run_id, kind, private_key, sha256, size_bytes, schema_version, validated_at, deletion_state; generated artifacts belong to a run |
 | run_events | run_id, sequence, type, redacted payload, created_at; unique (run_id, sequence) |
 | dashboards | id, run_id, spec_artifact_id, source_artifact_id, bundle_artifact_id, render_mode |
 | pending_questions | id, run_id, typed payload, answered_at, expires_at |

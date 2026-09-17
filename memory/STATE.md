@@ -4,11 +4,13 @@ Last updated: 2026-09-17
 
 ## Objective
 
-Build the documented autonomous CSV/SQLite analyst with generated Pandas, baseline models, and React dashboards. The latest request authorized security feasibility and foundation scaffolding.
+Build the documented autonomous CSV/SQLite analyst. The current milestone implements persistence and local authenticated project access (B03/B04); hosted identity is explicitly tracked as B04H.
 
 ## Implemented
 
 - Local FastAPI: liveness, unavailable analysis readiness, capability reporting, hosted-startup rejection.
+- PostgreSQL metadata with 15 application tables and Alembic migrations; no implicit table creation. Composite foreign keys enforce project/run lineage.
+- Operator-issued single-use login, hashed server sessions, origin/CSRF checks, logout, and owner-scoped project creation/list/read with idempotency and pagination.
 - Python schemas, generated OpenAPI/TypeScript, contract drift checks.
 - React isolation lab: synthetic filtering, MessageChannel scoping, hash-based CSP, reset/fallback.
 - Runtime preflight, fixed probe policy, bounded synthetic-image launcher and Dockerfile. No arbitrary-code executor.
@@ -17,11 +19,11 @@ Build the documented autonomous CSV/SQLite analyst with generated Pandas, baseli
 
 ## Validation
 
-`npm run check` passed, including 24 Python and 4 protocol tests. All 5 Chromium tests passed. HTTP smoke confirmed API/lab availability and disabled uploads/execution/persistence. See `docs/evidence/2026-09-16-foundation.md` for limits and two upstream test-client warnings.
+`npm run check` passes (4 protocol tests; default Python run 35 passed/12 PostgreSQL cases skipped). `npm run test:postgres` passes all 47 Python cases with no skips; `npm run db:check` reports no drift. Previous 5 Chromium tests are unchanged and were not rerun for this backend milestone. Two upstream test-client warnings remain. See `docs/evidence/2026-09-17-persistence-auth.md`.
 
 ## Blocker and missing features
 
-Docker Linux engine is unreachable after a hidden startup attempt. Actual sandbox probes were NOT run. Do not enable generated code or mark B01 complete. Authentication, migrations/database, queue, uploads, LLM, modeling, generated-source builds, and product screens remain unimplemented. No deployment or paid service exists.
+Docker isolation is still unverified; do not enable generated execution or mark B01 complete. Hosted identity, queues/workers, uploads, LLM/modeling, generated-source builds, and product screens remain unimplemented. Local authentication is not hosted SSO. No deployment or paid service exists.
 
 ## Source control
 
@@ -29,12 +31,12 @@ The user authorized `https://github.com/sharifh530/Data-to-Dashboard.git` as the
 
 ## Local sessions
 
-API was started at `http://127.0.0.1:8000`; lab at `http://127.0.0.1:4173` with renderer at `http://localhost:4174`. Codex browser open was queued. Verify liveness before reuse; sessions may not survive. Browser tests need the lab ports free. Stop only this project's processes when replacing servers.
+Project-owned PostgreSQL uses `127.0.0.1:55432` with `.local/postgres/data`; ignored `.env` contains its URL. The helper leaves the system PostgreSQL service alone. The database stopped between sessions and was restarted; connection attempts are now bounded to five seconds. Verify database/API/lab liveness before reuse. API/lab commands and sign-in examples are in `docs/PERSISTENCE_AND_AUTH.md` and `docs/GETTING_STARTED.md`. Stop only this project's processes.
 
 ## Next concrete action
 
-Advance B03 persistence models/migrations and contracts, then B04 ownership. Resolve B01 on a dedicated Linux runtime: run the fixed probe and extend resource/cancellation/escape tests. Keep generated execution disabled until the full boundary is verified.
+Advance B06 durable run/outbox/progress orchestration using synthetic fixtures while B05 isolated upload parsing depends on resolving B01. Recheck Docker/runtime availability, run the fixed probe on a dedicated Linux runtime, and extend resource/cancellation/escape tests before enabling generated execution. Implement B04H before hosted release.
 
 ## Pending decisions
 
-Execution/hosting provider, authentication provider, LLM/model/budget, product design. Current foundation requires no credentials. No deadline is assumed.
+Execution/hosting provider, hosted identity provider, LLM/model/budget, product design. Local database credentials are generated and ignored; local sign-in tokens are operator-issued and must never enter Git/memory. No deadline is assumed.

@@ -19,6 +19,9 @@ Foundation update: React/TypeScript, FastAPI, npm, uv, and the isolated fixture 
 | ADR-011 | Accepted: npm + uv and exact lockfiles | Use verified npm 11.19.0 and local Python 3.13.7. TypeScript 5.9.3 satisfies generator compatibility; no forced dependency resolution. |
 | ADR-012 | Accepted: hard-disabled local-only API | Runtime registration/environment flags cannot enable arbitrary execution; broker and authentication integration remain prerequisites. |
 | ADR-013 | Accepted: reviewed React lab before product shell | Tests the boundary independently; esbuild compiles checked-in fixtures only. Generated-source builds still require isolation. |
+| ADR-014 | Accepted 2026-09-17: project-owned PostgreSQL 17 for local metadata | Installed binaries allow real migration/parity/concurrency tests despite Docker being unavailable. Cluster lives in ignored .local, isolated from system databases. SQLite remains a fast test backend only. |
+| ADR-015 | Accepted 2026-09-17: operator-issued local login tickets and hashed server sessions | Provides testable authentication without selecting a hosted provider. Five-minute single-use tickets, eight-hour sessions, origin/CSRF checks, HTTPS secure cookies. Loopback HTTP uses an explicit local cookie exception. Hosted startup stays disabled; B04H is a separate required release gate. |
+| ADR-016 | Accepted 2026-09-17: raw upload reference on dataset; run-scoped derived artifacts | Avoids circular raw-artifact linkage and enables composite project/run foreign keys. No object storage or upload execution is implied by the schema. |
 
 ## Template for future decisions
 
