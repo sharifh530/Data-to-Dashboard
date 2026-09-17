@@ -47,3 +47,11 @@ Rechecked sandbox preflight: Docker unreachable, generated execution disabled. I
 Validation: npm run check passed (4 protocol tests, 52 Python passed/31 PostgreSQL skipped, lint/types/contracts/build). Final npm run test:postgres passed 84/84 after concurrent quota test; npm run check:python passed; npm run db:check reported no drift. Receiver timeout/disconnect, revocation during upload, corruption, idempotency and ownership covered. Two existing upstream warnings. Renderer unchanged, browser tests not rerun. See docs/evidence/2026-09-17-upload-storage.md.
 
 Updated docs/memory and publishing this completed storage slice under standing authorization. Next: resolve dedicated sandbox for inspection, or authenticated upload/history product UX while visibly reporting inspection blocked.
+
+## 2026-09-17 — B12 local workspace shell
+
+Built reviewed React workspace on the same API origin, local ticket sign-in, project sidebar/creation, raw upload/download, dataset list, sample run history/polling/cancel and logout. Added paginated owner-scoped dataset listing, static asset allowlisting/CSP, esbuild command, browser test harness, CI step and ADR-019. Responsive desktop/mobile screenshots visually checked. B12 remains partial; analysis/dashboard/model screens depend on actual isolated processing.
+
+Validation: npm run check passed (4 protocol tests, 53 Python passed/33 PostgreSQL skipped, lint/types/contracts/build); npm run test:postgres passed 86/86; npm run test:web passed real API Chromium journey, repeated after minor UI fixes with lint/types. Existing renderer suite unchanged, not rerun. No JavaScript page errors or mobile horizontal overflow. Two existing Python test-client warnings remain. See docs/evidence/2026-09-17-workspace-ui.md.
+
+Restarted only the verified project API process; new server on 127.0.0.1:8000, process 11388 at time of startup. PostgreSQL verified. No normal worker started. Next priority: establish a verified hardened execution environment and implement actual file inspection, rather than expanding synthetic workflows. Standing authorization covers milestone commit/push.

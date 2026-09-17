@@ -10,6 +10,8 @@ Current milestone: [Durable synthetic run processing](docs/RUN_PROCESSING.md) an
 
 ## Read first
 
+Open the [authenticated workspace](docs/WORKSPACE_UI.md) to create projects, upload raw files and follow sample runs. It is served by the local API on port 8000; port 4173 remains the renderer test lab.
+
 Latest addition: [bounded local raw upload storage](docs/UPLOAD_STORAGE.md). Files remain awaiting isolated inspection; the full upload-to-analysis workflow is not enabled yet.
 
 1. [Project requirements](docs/PRD.md): scope, user stories, measurable acceptance criteria.

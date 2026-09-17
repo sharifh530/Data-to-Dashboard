@@ -17,7 +17,7 @@ Last updated: 2026-09-17. Detailed scope/dependencies: [roadmap](../docs/ROADMAP
 | B09 | TODO | Baseline evaluation |
 | B10 | TODO | Dashboard specification/query/fallback |
 | B11 | TODO | Generated React pipeline |
-| B12 | TODO | Product UX/history/exports |
+| B12 | PARTIAL | Authenticated local shell, projects, upload/download and sample history/cancel complete. Evidence: docs/evidence/2026-09-17-workspace-ui.md. Analysis/dashboard/model UX and exports remain future. |
 | B13 | TODO | Retention, deletion, quotas, controls |
 | B14 | TODO | Release verification and operational rehearsal |
 | B15 | TODO | Post-MVP dashboard revisions |

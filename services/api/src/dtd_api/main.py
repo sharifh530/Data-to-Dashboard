@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException
@@ -15,7 +15,7 @@ from starlette.responses import Response
 from dtd_api.contracts import Capabilities, ErrorDetail, ErrorResponse, Health
 from dtd_api.database import check_schema, make_engine
 from dtd_api.errors import ApiError
-from dtd_api.settings import Settings
+from dtd_api.settings import ROOT, Settings
 
 
 def create_app(settings: Settings | None = None, engine: Engine | None = None) -> FastAPI:
@@ -89,6 +89,22 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.include_router(run_router)
     app.include_router(upload_router)
 
+    @app.get("/", include_in_schema=False)
+    def workspace() -> FileResponse:
+        path = ROOT / "dist/web/index.html"
+        if not path.is_file():
+            raise ApiError(503, "UI_NOT_BUILT", "Build the workspace with npm run build:web.")
+        return FileResponse(path)
+
+    @app.get("/assets/{filename}", include_in_schema=False)
+    def asset(filename: str) -> FileResponse:
+        if filename not in {"main.js", "main.css"}:
+            raise ApiError(404, "NOT_FOUND", "Asset not found.")
+        path = ROOT / "dist/web" / filename
+        if not path.is_file():
+            raise ApiError(404, "NOT_FOUND", "Build the workspace first.")
+        return FileResponse(path)
+
     @app.middleware("http")
     async def security_headers(request: Request, call_next: RequestResponseEndpoint) -> Response:
         request.state.request_id = str(uuid4())
@@ -97,6 +113,11 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Cache-Control"] = "no-store"
         response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+        if request.url.path == "/" or request.url.path.startswith("/assets/"):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; "
+                "img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+            )
         return response
 
     @app.get("/health/live", response_model=Health)

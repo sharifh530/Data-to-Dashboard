@@ -14,5 +14,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["packages/**/*.ts", "packages/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx", "playwright.config.ts"]
+  "include": ["apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx", "playwright*.ts"]
 }

@@ -4,21 +4,22 @@ Last updated: 2026-09-17
 
 ## Implemented
 
-B05 raw storage now joins B06 synthetic runs and local authentication. The full autonomous analyst remains under construction; B05 inspection is still blocked.
+B12 local workspace UI now connects B05 raw storage and B06 synthetic runs to local authentication. The full autonomous analyst remains under construction; B05 inspection is still blocked.
 
 - Local-only FastAPI, 17 metadata tables/migrations, operator-issued login, hashed sessions, CSRF and owner-scoped projects.
 - Raw byte upload storage in PostgreSQL, 10 MiB/file and 50 MiB/owner limits, checksums, idempotency and owner-only downloads. See docs/UPLOAD_STORAGE.md.
+- Reviewed React workspace at API port 8000: local sign-in, project selection/creation, uploads, paginated stored files/downloads, sample history, polling/cancel and logout. See docs/WORKSPACE_UI.md. Port 4173 is still the separate renderer lab.
 - PostgreSQL transactional outbox/work items, fenced leases, bounded recovery/checkpoints, synthetic run admission/history/detail, SSE replay/snapshot and cancellation.
 - Generated contracts, lockfiles, checks and CI definition; React isolation lab; runtime preflight/fixed probe tooling.
 - See docs/RUN_PROCESSING.md and docs/PERSISTENCE_AND_AUTH.md for actual behavior.
 
 ## Validation
 
-npm run check passed: 4 protocol tests, 52 Python passed/31 PostgreSQL skipped, lint/types/contracts/build. After adding the concurrency case, npm run test:postgres passed all 84 with no skips and npm run check:python passed. npm run db:check: no drift. Two upstream test-client warnings remain. Renderer unchanged; browser tests not rerun. See docs/evidence/2026-09-17-upload-storage.md.
+npm run check passed: 4 protocol tests, 53 Python passed/33 PostgreSQL skipped, lint/types/contracts/build. npm run test:postgres passed all 86 with no skips. npm run test:web passed the real API Chromium journey; desktop/mobile screenshots visually inspected and mobile overflow checked. Final UI copy fixes passed lint/types and repeated test:web. Existing renderer tests unchanged, not rerun. Two upstream test-client warnings remain. See docs/evidence/2026-09-17-workspace-ui.md.
 
 ## Limitations
 
-B01 remains blocked: preflight again reports DOCKER_UNAVAILABLE. Raw files are opaque and awaiting isolated inspection. Hosted identity, parsing, production object storage, LangChain/LangGraph, modeling, generated execution/builds and product screens remain unimplemented. Actual executor cancellation is future integration. No hosted deployment or paid service exists.
+B01 remains blocked from the last preflight: DOCKER_UNAVAILABLE. Raw files await isolated inspection. Hosted identity, parsing, production storage, LangChain/LangGraph, modeling, generated execution/builds and analysis/dashboard screens remain unimplemented. Actual executor cancellation is future integration. No hosted deployment or paid service exists.
 
 ## Source control and local services
 
@@ -28,7 +29,7 @@ Project-owned PostgreSQL listens on 127.0.0.1:55432; ignored .local/postgres/dat
 
 ## Next concrete action
 
-Resolve B01 dedicated Linux Docker/runsc for B05 isolated inspection, selection and preview. Raw storage slice is complete. Never parse uploads or execute generated code on the API/developer host. If runtime remains unavailable, add the authenticated product shell/upload/history UX against implemented endpoints, clearly showing inspection blocked. Hosted release still requires B04H.
+Resolve B01 dedicated Linux Docker/runsc for B05 isolated inspection, selection and preview. Raw storage and basic authenticated UI are now complete; do not continue adding synthetic features as a substitute for the core analyst. Establish a verified execution environment, then implement actual inspection. Never parse uploads or execute generated code on the API/developer host. Hosted release still requires B04H.
 
 ## Open decisions
 

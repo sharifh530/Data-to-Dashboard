@@ -48,6 +48,8 @@ Use Ctrl+C in each terminal to stop servers. Ports are fixed and startup fails i
 
 ## Verification
 
+The authenticated product workspace is at `http://127.0.0.1:8000/` after `npm run build:web` and `npm run dev:api`. See [workspace UI](WORKSPACE_UI.md) for local tickets, uploads and sample run history. `npm run test:web` tests this UI against an ephemeral backend, separately from the renderer isolation lab.
+
 Raw uploads are now available through a storage-only API; see [upload storage](UPLOAD_STORAGE.md) for headers, limits and download behavior. Run `npm run db:migrate` first. CSV/SQLite inspection and analysis remain disabled.
 
 ```powershell

@@ -3,11 +3,11 @@
 import asyncio
 import hashlib
 from datetime import timedelta
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from anyio import to_thread
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Query, Request, Response
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 from starlette.requests import ClientDisconnect
@@ -32,6 +32,37 @@ class StoredDataset(Contract):
     sha256: str
     status: Literal["awaiting_isolated_inspection"] = "awaiting_isolated_inspection"
     analysis_ready: Literal[False] = False
+
+
+class DatasetPage(Contract):
+    items: list[StoredDataset]
+    next_cursor: str | None
+
+
+@router.get("/projects/{project_id}/datasets", response_model=DatasetPage)
+def listing(
+    project_id: UUID,
+    principal: AUTH,
+    db: DB,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    cursor: UUID | None = None,
+) -> DatasetPage:
+    owned(db, str(project_id), principal.user.id)
+    query = (
+        select(Dataset.id)
+        .join(RawUpload)
+        .where(Dataset.project_id == str(project_id), Dataset.deleted_at.is_(None))
+    )
+    if cursor:
+        boundary = metadata(db, str(cursor), principal.user.id)
+        if boundary.project_id != project_id:
+            raise ApiError(404, "NOT_FOUND", "Dataset cursor not found.")
+        query = query.where(Dataset.id > str(cursor))
+    ids = list(db.scalars(query.order_by(Dataset.id).limit(limit + 1)))
+    return DatasetPage(
+        items=[metadata(db, value, principal.user.id) for value in ids[:limit]],
+        next_cursor=ids[limit - 1] if len(ids) > limit else None,
+    )
 
 
 def metadata(db: Session, dataset_id: str, owner: str) -> StoredDataset:

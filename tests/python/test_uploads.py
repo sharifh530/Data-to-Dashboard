@@ -43,8 +43,11 @@ def test_raw_roundtrip_idempotency_and_ownership(db_engine):
         assert raw.headers["content-disposition"].startswith("attachment;")
         assert raw.headers["x-content-type-options"] == "nosniff"
         assert client.get(url).json() == result
+        listed = client.get(f"/api/v1/projects/{project}/datasets").json()
+        assert listed["items"] == [result]
         bob_headers = login(bob, db_engine, "bob")
         assert bob.get(url).status_code == 404
+        assert bob.get(f"/api/v1/projects/{project}/datasets").status_code == 404
         assert bob.get(url + "/raw").status_code == 404
         assert send(bob, bob_headers, project).status_code == 404
         assert send(client, {}, project).status_code == 403
@@ -53,6 +56,20 @@ def test_raw_roundtrip_idempotency_and_ownership(db_engine):
             assert db.scalar(select(Dataset.status)) == "validating"
             db.execute(update(Project).values(deleted_at=now()))
         assert client.get(url).status_code == 404
+
+
+def test_dataset_listing_pagination(db_engine):
+    with client_for(db_engine) as client:
+        headers = login(client, db_engine, "alice")
+        project = create(client, headers).json()["id"]
+        ids = {send(client, headers, project, key=str(n)).json()["id"] for n in range(3)}
+        first = client.get(f"/api/v1/projects/{project}/datasets?limit=2").json()
+        second = client.get(
+            f"/api/v1/projects/{project}/datasets?cursor={first['next_cursor']}"
+        ).json()
+        assert {item["id"] for item in first["items"] + second["items"]} == ids
+        assert second["next_cursor"] is None
+        assert client.get(f"/api/v1/projects/{project}/datasets?limit=101").status_code == 422
 
 
 def test_upload_limits_and_integrity(db_engine, monkeypatch):
