@@ -11,7 +11,7 @@ Last updated: 2026-09-17. Detailed scope/dependencies: [roadmap](../docs/ROADMAP
 | B04 | DONE | Local operator-issued login, hashed sessions, CSRF, project ownership and concurrent idempotency tests. Hosted authentication is B04H, not completed. |
 | B04H | TODO | Required before hosted release: identity provider, abuse controls, HTTPS/browser sign-in and recovery integration. |
 | B05 | TODO | Upload/CSV/SQLite inspection |
-| B06 | TODO | Durable queue, run states, SSE, cancellation |
+| B06 | DONE (synthetic scope) | PostgreSQL outbox/leases/checkpoints, SSE/history/cancel and process recovery. Evidence: docs/evidence/2026-09-17-run-processing.md. Executor cancellation/LangGraph remain B01/B08. |
 | B07 | TODO | Profiling and validated artifacts |
 | B08 | TODO | Generated Pandas workflow |
 | B09 | TODO | Baseline evaluation |

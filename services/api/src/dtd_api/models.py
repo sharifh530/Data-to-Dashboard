@@ -110,6 +110,11 @@ class Run(Identity, Base):
     stage: Mapped[str | None] = mapped_column(String(40))
     generation: Mapped[int] = mapped_column(Integer, default=1)
     cancellation_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    event_sequence: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    checkpoint: Mapped[dict[str, object]] = mapped_column(JSON, default=dict, server_default="{}")
+    result: Mapped[dict[str, object] | None] = mapped_column(JSON)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     __table_args__ = (
         UniqueConstraint("id", "project_id"),
         ForeignKeyConstraint(
@@ -140,6 +145,15 @@ class StageAttempt(Identity, Base):
             "status IN ('pending','running','succeeded','failed','cancelled')", name="status"
         ),
     )
+
+
+class WorkItem(Base):
+    __tablename__ = "work_items"
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"), primary_key=True)
+    state: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    token: Mapped[str | None] = mapped_column(String(36))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    __table_args__ = (CheckConstraint("state IN ('pending','leased','done')", name="state"),)
 
 
 class Artifact(Identity, Base):

@@ -6,7 +6,7 @@ An autonomous analyst that turns messy CSV or SQLite data into a cleaned dataset
 
 Use [Getting started](docs/GETTING_STARTED.md) to run the foundation and [verification evidence](docs/evidence/2026-09-16-foundation.md) for tested behavior and blockers.
 
-Current milestone: [Persistence and local authentication](docs/PERSISTENCE_AND_AUTH.md) and [verification evidence](docs/evidence/2026-09-17-persistence-auth.md).
+Current milestone: [Durable synthetic run processing](docs/RUN_PROCESSING.md) and [verification evidence](docs/evidence/2026-09-17-run-processing.md). Local sign-in is documented in [persistence and authentication](docs/PERSISTENCE_AND_AUTH.md).
 
 ## Read first
 
@@ -37,4 +37,4 @@ Current milestone: [Persistence and local authentication](docs/PERSISTENCE_AND_A
 
 A user uploads data, reviews the detected schema, optionally chooses a prediction target, and starts an analysis. A bounded LangChain/LangGraph workflow writes and executes Pandas code, validates artifacts, evaluates a baseline, and generates a dashboard. The user can inspect transformations, filter charts, see model limitations, and download results. Invalid generated UI falls back to a validated dashboard specification.
 
-The foundation uses React + TypeScript, FastAPI, SQLAlchemy/Alembic, and PostgreSQL. LangChain/LangGraph, Pandas/scikit-learn, a durable queue, and S3-compatible storage remain planned. Versions are locked; hosted providers remain undecided. Public generated-code execution requires the documented security gates.
+The foundation uses React + TypeScript, FastAPI, SQLAlchemy/Alembic, and PostgreSQL with a durable fixture workflow. LangChain/LangGraph, Pandas/scikit-learn and S3-compatible storage remain planned. Versions are locked; hosted providers remain undecided. Public generated-code execution requires the documented security gates.

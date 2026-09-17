@@ -65,7 +65,7 @@ npm run contracts:generate
 npm run contracts:check
 ```
 
-OpenAPI types cover health/capability, authentication, and project routes. `run-create.schema.json` remains a draft future input contract; no run-submission endpoint exists. Use `npm run test:postgres` for real database parity/concurrency tests.
+OpenAPI types cover health/capability, authentication, project and synthetic run routes. `run-create.schema.json` remains a draft future analysis input contract. Use `npm run test:postgres` for real database parity/concurrency tests. Start the durable fixture worker with `npm run dev:worker`; see [run processing](RUN_PROCESSING.md) for submission, SSE replay, cancellation and recovery.
 
 ## Synthetic Python probe on prepared Linux
 

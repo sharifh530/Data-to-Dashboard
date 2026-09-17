@@ -25,13 +25,13 @@ package = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]
-pythonpath = ["services/api/src", "services/execution-broker/src"]
+pythonpath = ["services/api/src", "services/execution-broker/src", "services/worker/src"]
 addopts = "-ra"
 
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-extend-exclude = [".tools"]
+extend-exclude = [".tools", ".kilo"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
@@ -39,5 +39,5 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.mypy]
 python_version = "3.13"
 strict = true
-mypy_path = ["services/api/src", "services/execution-broker/src"]
-files = ["services/api/src", "services/execution-broker/src"]
+mypy_path = ["services/api/src", "services/execution-broker/src", "services/worker/src"]
+files = ["services/api/src", "services/execution-broker/src", "services/worker/src"]

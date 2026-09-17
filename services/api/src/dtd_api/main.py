@@ -79,9 +79,11 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
 
     from dtd_api.auth import router as auth_router
     from dtd_api.projects import router as project_router
+    from dtd_api.runs import router as run_router
 
     app.include_router(auth_router)
     app.include_router(project_router)
+    app.include_router(run_router)
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next: RequestResponseEndpoint) -> Response:
@@ -102,6 +104,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         return Capabilities(
             persistence_enabled=configured_engine is not None,
             local_auth_enabled=configured_engine is not None,
+            synthetic_runs_enabled=configured_engine is not None,
         )
 
     @app.get("/health/ready", status_code=503, responses={503: {"model": ErrorResponse}})

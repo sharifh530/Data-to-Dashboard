@@ -5,7 +5,7 @@ import { resolve, delimiter } from 'node:path';
 export const python = resolve(process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python');
 export const pythonEnv = {
   ...process.env,
-  PYTHONPATH: [resolve('services/api/src'), resolve('services/execution-broker/src')].join(delimiter),
+  PYTHONPATH: [resolve('services/api/src'), resolve('services/execution-broker/src'), resolve('services/worker/src')].join(delimiter),
 };
 
 if (!existsSync(python)) {

@@ -25,4 +25,6 @@ Foundation update: React/TypeScript, FastAPI, npm, uv, and the isolated fixture 
 
 ## Template for future decisions
 
+ADR-017, accepted 2026-09-17: use PostgreSQL transactional outbox and leased work items for the local B06 workflow. This replaces the proposed Redis/Celery delivery default for this milestone and implements the queue portion of ADR-003. PostgreSQL is already available and verifies row locking, recovery and atomic publication without a second service. Workers use SKIP LOCKED and fenced leases; fixed checkpoints precede the future LangGraph integration. General broker execution, external side effects and production scale remain unverified. Evidence: [run processing](evidence/2026-09-17-run-processing.md). Reconsider a separate broker if measured scale or operational needs justify it.
+
 ID and title; date; status; problem/context; alternatives considered; decision; consequences; validation evidence; affected requirements; supersedes/superseded-by. For security decisions, state the trust boundary and remaining limitations explicitly.

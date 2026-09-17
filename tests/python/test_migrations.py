@@ -3,8 +3,8 @@ from uuid import uuid4
 import pytest
 from alembic import command
 from dtd_api.database import check_schema, migrate, migration_config
-from dtd_api.models import Artifact, Dataset, DatasetVersion, Project, Run, User
-from sqlalchemy import Engine, inspect
+from dtd_api.models import Artifact, Dataset, DatasetVersion, Project, Run, RunEvent, User
+from sqlalchemy import Engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -53,3 +53,31 @@ def test_database_rejects_cross_project_lineage(db_engine: Engine) -> None:
             with pytest.raises(IntegrityError), db.begin_nested():
                 db.add(row)
                 db.flush()
+
+
+def test_workflow_migration_preserves_existing_event_sequence(db_engine: Engine) -> None:
+    with Session(db_engine) as db, db.begin():
+        user = User(auth_subject="migration")
+        db.add(user)
+        db.flush()
+        project = Project(owner_id=user.id, name="Existing")
+        db.add(project)
+        db.flush()
+        dataset = Dataset(
+            project_id=project.id, raw_key="fixture", raw_sha256="a" * 64, format="csv"
+        )
+        db.add(dataset)
+        db.flush()
+        version = DatasetVersion(dataset_id=dataset.id, project_id=project.id)
+        db.add(version)
+        db.flush()
+        run = Run(project_id=project.id, dataset_version_id=version.id)
+        db.add(run)
+        db.flush()
+        db.add(RunEvent(run_id=run.id, sequence=7, type="existing", payload={}))
+    with db_engine.begin() as connection:
+        config = migration_config()
+        config.attributes["connection"] = connection
+        command.downgrade(config, "a0ae31772253")
+        command.upgrade(config, "head")
+        assert connection.scalar(text("SELECT event_sequence FROM runs")) == 7

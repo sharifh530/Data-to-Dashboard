@@ -44,6 +44,7 @@ class Capabilities(Contract):
     execution_enabled: Literal[False] = False
     persistence_enabled: bool = False
     local_auth_enabled: bool = False
+    synthetic_runs_enabled: bool = False
     reason: str = "Execution requires a verified broker, isolation evidence, and authentication."
 
 

@@ -31,3 +31,11 @@ Implemented local API, contracts, scoped React bridge/lab, runtime preflight/fix
 Validation: `npm run check` passed with 24 Python and 4 TypeScript tests plus lint/format/types/contracts/build. All 5 Chromium tests passed after an accessible selector fix. HTTP smoke passed. Runtime preflight returned `DOCKER_UNAVAILABLE` (exit 2); container probes were NOT run. Two upstream Python warnings remain. TypeScript peer conflict resolved using a compatible exact version.
 
 Started API/lab sessions and queued the lab in Codex. Docker Desktop was launched hidden once; engine remained unavailable. No daemon settings changed. Next: B03 persistence/contracts and B04 ownership while resolving B01's dedicated-runtime prerequisite.
+
+## 2026-09-17 — B06 durable synthetic processing
+
+Implemented PostgreSQL outbox/work items, fenced leases, three fixed stages, retry/deadline bounds, owner-scoped run history/detail/SSE and cancellation. Added worker command, migration preserving event IDs, contracts, ADR-017 and run guide. No generated execution or uploaded data processing enabled.
+
+Validation: npm run check passed (4 protocol tests; 48 Python passed/28 PostgreSQL skipped; lint/types/contracts/build). npm run test:postgres: all 76 passed, no skips; two existing upstream warnings. Includes real concurrency, separate process restart, lease recovery, cancellation/publication race and ownership/revocation. npm run db:check: no drift. npm run dev:worker -- --once succeeded. Renderer unchanged, browser tests not rerun. Initial nested .kilo lint discovery and migration import-order failures corrected. Tooling worktree contents untouched.
+
+Fetched remote main; unchanged from persistence/auth milestone before publication. Authorized commit/push follows documentation updates. Next: resolve B01 for B05, or bounded immutable upload storage with parsing disabled if runtime stays blocked.

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev:api": "node scripts/python.mjs -m uvicorn dtd_api.main:app --app-dir services/api/src --host 127.0.0.1 --port 8000",
+    "dev:worker": "node scripts/python.mjs -m dtd_worker",
     "db:migrate": "node scripts/python.mjs -m alembic upgrade head",
     "db:check": "node scripts/python.mjs -m alembic check",
     "auth:issue": "node scripts/python.mjs -m dtd_api.cli",

@@ -1,6 +1,6 @@
 # Architecture
 
-Status: local API, PostgreSQL metadata/migrations, operator-issued authentication, owner-scoped project APIs, runtime preflight, and React bridge lab exist. Queue, analysis, artifact storage, and hosted services remain planned. See [persistence/auth](PERSISTENCE_AND_AUTH.md).
+Status: local API, PostgreSQL metadata/migrations, local authentication, owner-scoped projects, durable synthetic runs/SSE, runtime preflight and React bridge lab exist. Analysis, artifact storage and hosted services remain planned. See [persistence/auth](PERSISTENCE_AND_AUTH.md) and [run processing](RUN_PROCESSING.md).
 
 ## Service responsibilities
 
@@ -9,7 +9,7 @@ Status: local API, PostgreSQL metadata/migrations, operator-issued authenticatio
 | Web application | React, TypeScript, Vite | Authenticated shell, upload/configuration, run history, reports |
 | API | FastAPI, Pydantic, SQLAlchemy/Alembic | Ownership, validation, upload streaming, run commands, SSE, artifact access |
 | Orchestrator worker | LangChain tools + LangGraph | Persistent stage graph, provider calls, budget accounting, artifact validation |
-| Queue | Redis + Celery, proposed | Delivery, concurrency, worker leases; PostgreSQL remains run-status source of truth |
+| Queue | PostgreSQL outbox + leased work items, implemented for synthetic runs | Transactional delivery, SKIP LOCKED claims, fenced publication and lease recovery; ADR-017 |
 | Metadata/checkpoints | PostgreSQL | Users/projects, datasets, run state, events, checkpoints, audit records |
 | Object store | Private S3-compatible storage | Immutable uploads and versioned generated artifacts |
 | Execution broker | Small internal service | Issue isolated Python/build jobs; stage scoped inputs; enforce limits |

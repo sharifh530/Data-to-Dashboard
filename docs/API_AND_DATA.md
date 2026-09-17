@@ -1,6 +1,6 @@
 # API and persistence specification
 
-Target `/api/v1` contracts. Implemented: health/capabilities, local `/auth/exchange`, `/auth/session`, `/auth/logout`, and project create/list/read. Initial metadata migrations and generated OpenAPI/TypeScript exist. Remaining data/run/export/deletion endpoints below are planned. See [persistence/auth](PERSISTENCE_AND_AUTH.md) for current behavior and local cookie policy.
+Target `/api/v1` contracts. Implemented: health/capabilities, local authentication, projects, synthetic run submission/history/detail, SSE and cancellation. Remaining analysis/data/export/deletion endpoints below are planned. See [persistence/auth](PERSISTENCE_AND_AUTH.md) and [run processing](RUN_PROCESSING.md) for actual behavior; planned analysis contracts do not override the synthetic API.
 
 ## Common conventions
 

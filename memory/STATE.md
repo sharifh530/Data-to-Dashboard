@@ -2,41 +2,33 @@
 
 Last updated: 2026-09-17
 
-## Objective
-
-Build the documented autonomous CSV/SQLite analyst. The current milestone implements persistence and local authenticated project access (B03/B04); hosted identity is explicitly tracked as B04H.
-
 ## Implemented
 
-- Local FastAPI: liveness, unavailable analysis readiness, capability reporting, hosted-startup rejection.
-- PostgreSQL metadata with 15 application tables and Alembic migrations; no implicit table creation. Composite foreign keys enforce project/run lineage.
-- Operator-issued single-use login, hashed server sessions, origin/CSRF checks, logout, and owner-scoped project creation/list/read with idempotency and pagination.
-- Python schemas, generated OpenAPI/TypeScript, contract drift checks.
-- React isolation lab: synthetic filtering, MessageChannel scoping, hash-based CSP, reset/fallback.
-- Runtime preflight, fixed probe policy, bounded synthetic-image launcher and Dockerfile. No arbitrary-code executor.
-- Exact npm/uv lockfiles, checks, and CI workflow (not run remotely).
-- Getting-started guide and dated evidence; planning package remains the product specification.
+B06 durable local synthetic run processing now joins PostgreSQL persistence and local authentication. The full autonomous analyst remains under construction.
+
+- Local-only FastAPI, 16 metadata tables/migrations, operator-issued login, hashed sessions, CSRF and owner-scoped projects.
+- PostgreSQL transactional outbox/work items, fenced leases, bounded recovery/checkpoints, synthetic run admission/history/detail, SSE replay/snapshot and cancellation.
+- Generated contracts, lockfiles, checks and CI definition; React isolation lab; runtime preflight/fixed probe tooling.
+- See docs/RUN_PROCESSING.md and docs/PERSISTENCE_AND_AUTH.md for actual behavior.
 
 ## Validation
 
-`npm run check` passes (4 protocol tests; default Python run 35 passed/12 PostgreSQL cases skipped). `npm run test:postgres` passes all 47 Python cases with no skips; `npm run db:check` reports no drift. Previous 5 Chromium tests are unchanged and were not rerun for this backend milestone. Two upstream test-client warnings remain. See `docs/evidence/2026-09-17-persistence-auth.md`.
+npm run check passes: 4 protocol tests, 48 Python passed/28 PostgreSQL skipped, lint/types/contracts/build. npm run test:postgres: all 76 passed, no skips. npm run db:check: no drift. npm run dev:worker -- --once: successful startup/exit. Two upstream test-client warnings remain. Existing 5 Chromium tests were unchanged and not rerun. See docs/evidence/2026-09-17-run-processing.md.
 
-## Blocker and missing features
+## Limitations
 
-Docker isolation is still unverified; do not enable generated execution or mark B01 complete. Hosted identity, queues/workers, uploads, LLM/modeling, generated-source builds, and product screens remain unimplemented. Local authentication is not hosted SSO. No deployment or paid service exists.
+B01 hardened runtime remains blocked. Synthetic stages use reviewed fixed aggregates only. Hosted identity, uploads/parsing/storage, LangChain/LangGraph, modeling, generated execution/builds and product screens remain unimplemented. Actual executor cancellation is future integration. No hosted deployment or paid service exists.
 
-## Source control
+## Source control and local services
 
-The user authorized `https://github.com/sharifh530/Data-to-Dashboard.git` as the project repository and routine pushes after every completed major task. Local branch: `main`; remote: `origin`. Commit verified milestone changes with updated memory, fetch/reconcile remote changes without force-pushing, and verify the pushed commit. See Git history for the latest publication state.
+User authorized milestone pushes to https://github.com/sharifh530/Data-to-Dashboard.git. Branch main, remote origin; fetch first, preserve history, never force-push, verify remote hash. See Git history for publication state.
 
-## Local sessions
-
-Project-owned PostgreSQL uses `127.0.0.1:55432` with `.local/postgres/data`; ignored `.env` contains its URL. The helper leaves the system PostgreSQL service alone. The database stopped between sessions and was restarted; connection attempts are now bounded to five seconds. Verify database/API/lab liveness before reuse. API/lab commands and sign-in examples are in `docs/PERSISTENCE_AND_AUTH.md` and `docs/GETTING_STARTED.md`. Stop only this project's processes.
+Project-owned PostgreSQL listens on 127.0.0.1:55432; ignored .local/postgres/data and .env hold local state/credentials. It was restarted this session. Verify liveness before reuse; leave system databases untouched. Start API/worker with npm run dev:api / npm run dev:worker. No persistent worker was left running; --once was tested. Tooling worktrees under .kilo are excluded from lint/Git.
 
 ## Next concrete action
 
-Advance B06 durable run/outbox/progress orchestration using synthetic fixtures while B05 isolated upload parsing depends on resolving B01. Recheck Docker/runtime availability, run the fixed probe on a dedicated Linux runtime, and extend resource/cancellation/escape tests before enabling generated execution. Implement B04H before hosted release.
+Recheck dedicated Linux Docker/runsc availability and resolve B01 for B05 isolated CSV/SQLite inspection. Run fixed probes plus resource/termination checks before enabling generated execution. If blocked, implement bounded immutable upload storage with parsing explicitly disabled. Never parse untrusted files on the API/developer host. B04H remains required before hosted release.
 
-## Pending decisions
+## Open decisions
 
-Execution/hosting provider, hosted identity provider, LLM/model/budget, product design. Local database credentials are generated and ignored; local sign-in tokens are operator-issued and must never enter Git/memory. No deadline is assumed.
+Execution/hosting provider, hosted identity, LLM/model/budget and product design. Never store credentials, issued tickets, private data or raw provider payloads in Git/memory.
