@@ -2,7 +2,7 @@
 
 An autonomous analyst that turns messy CSV or SQLite data into a cleaned dataset, an explainable baseline predictive model when appropriate, and a custom interactive React dashboard.
 
-**Status: persistence and local authentication implemented; full analyst application not yet implemented.** PostgreSQL migrations, authenticated project creation/listing, contracts, React isolation lab, and runtime preflight are runnable. Uploads, analysis, and generated Python execution remain disabled.
+**Status: local workspace, raw upload storage, synthetic run processing and tested gVisor probes implemented; full analyst application not yet implemented.** Uploaded-file inspection, LLM analysis, modeling and generated-code execution remain disabled. See the [detailed progress report](docs/PROGRESS_REPORT.md) and [compact continuation summary](memory/CHAT_HANDOFF.md).
 
 Use [Getting started](docs/GETTING_STARTED.md) to run the foundation and [verification evidence](docs/evidence/2026-09-16-foundation.md) for tested behavior and blockers.
 

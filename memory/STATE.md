@@ -1,6 +1,8 @@
 # Current project state
 
-Last updated: 2026-09-17
+Last updated: 2026-09-18
+
+Documentation snapshot: docs/PROGRESS_REPORT.md contains detailed task-by-task delivery/evidence; memory/CHAT_HANDOFF.md is a compact portable chat summary. Application-level internal compaction could not be triggered with available tools. No implementation changed in the documentation session.
 
 ## Implemented
 

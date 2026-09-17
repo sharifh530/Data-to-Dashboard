@@ -75,3 +75,9 @@ Added fixed bounded gVisor resource image and sandbox:wsl resources command. Sev
 Found and fixed two issues: 32 host tasks caused runtime exit rather than controlled guest fork failure; output flood blocked Docker attach after kill because the reader stopped draining. Excess data is now discarded while draining, retaining at most 64 KiB. Actual final suite passed; image digest and measured evidence in docs/evidence/2026-09-17-resource-probes.md.
 
 npm run check passed: four JS tests, 53 Python passed/33 PostgreSQL skipped, lint/format/types/contracts/build. Unchanged PostgreSQL/browser suites not rerun. Two existing upstream warnings and Docker legacy-builder warning remain. B01 stays partial for adversarial parser and broker-death/integration checks. Next: bounded isolated CSV/SQLite inspector with safe transfer/results and application integration; no upload parsing or arbitrary execution enabled by this milestone. Standing authorization covers commit/push.
+
+## 2026-09-18 — Detailed progress report and compact chat handoff
+
+At user request, reconciled session memory, task ledger, dated evidence and eight implementation commits into docs/PROGRESS_REPORT.md. Covers 11 delivered work areas, exact boundaries, issues fixed, validation provenance, remaining roadmap and operating commands. Created memory/CHAT_HANDOFF.md as a compact portable continuation summary; no available tool can force internal chat compaction, and no such action is claimed. Updated memory index, task/state and stale README status. Preserved full session history.
+
+Validation: checked all local links in the report/handoff/index/README and verified all eight referenced implementation commits exist. Documentation-only change; application tests not rerun. User-authorized documentation milestone commit/push follows.

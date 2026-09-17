@@ -1,10 +1,11 @@
 # Task status ledger
 
-Last updated: 2026-09-17. Detailed scope/dependencies: [roadmap](../docs/ROADMAP.md).
+Last updated: 2026-09-18. Detailed scope/dependencies: [roadmap](../docs/ROADMAP.md).
 
 | ID | Status | Deliverable / next action |
 | --- | --- | --- |
 | DOC-01 | DONE | Initial specification and memory package; see session log for validation |
+| DOC-02 | DONE | Detailed task-by-task PROGRESS_REPORT.md and compact CHAT_HANDOFF.md, reconciled against memory/evidence/Git history. Internal chat compaction is not tool-accessible. |
 | SAMPLE-01 | DONE | Uploadable synthetic sales CSV: 245 rows/11 columns with deliberate quality issues; samples/README.md records validation. |
 | B01 | PARTIAL | Eight isolation and seven real resource/termination probes pass under gVisor. Host/guest process caps separated; output-drain bug fixed. Adversarial parser, broker-death recovery and integration remain. docs/evidence/2026-09-17-resource-probes.md. |
 | B02 | DONE | Local API/React lab scaffold, lockfiles, checks, CI definition, setup guide. Evidence: docs/evidence/2026-09-16-foundation.md. Product UI remains future work. |
