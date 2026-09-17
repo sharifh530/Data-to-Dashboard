@@ -10,7 +10,7 @@ Last updated: 2026-09-17. Detailed scope/dependencies: [roadmap](../docs/ROADMAP
 | B03 | DONE | Metadata models/migration, generated contracts, upgrade/downgrade recovery and PostgreSQL schema checks. Evidence: docs/evidence/2026-09-17-persistence-auth.md. |
 | B04 | DONE | Local operator-issued login, hashed sessions, CSRF, project ownership and concurrent idempotency tests. Hosted authentication is B04H, not completed. |
 | B04H | TODO | Required before hosted release: identity provider, abuse controls, HTTPS/browser sign-in and recovery integration. |
-| B05 | TODO | Upload/CSV/SQLite inspection |
+| B05 | PARTIAL | Raw storage slice complete: bounded uploads, checksums, quota, idempotency, owner-only metadata/download. Inspection/selection/preview blocked on B01. See docs/UPLOAD_STORAGE.md. |
 | B06 | DONE (synthetic scope) | PostgreSQL outbox/leases/checkpoints, SSE/history/cancel and process recovery. Evidence: docs/evidence/2026-09-17-run-processing.md. Executor cancellation/LangGraph remain B01/B08. |
 | B07 | TODO | Profiling and validated artifacts |
 | B08 | TODO | Generated Pandas workflow |

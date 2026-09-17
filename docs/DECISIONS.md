@@ -25,6 +25,8 @@ Foundation update: React/TypeScript, FastAPI, npm, uv, and the isolated fixture 
 
 ## Template for future decisions
 
+ADR-018, accepted 2026-09-17: bounded local raw uploads use PostgreSQL bytea, committing bytes/metadata/idempotency atomically. This avoids introducing an unverified object store and permits meaningful ingestion progress while isolated parsing is blocked. Limits are 10 MiB/file, 50 MiB/owner and two simultaneous uploads per API process. The application exposes no overwrite; administrator-level immutability is not claimed. S3 remains the hosted target and needs migration/retention work. The dedicated raw-datasets route accepts opaque bytes, never marks them ready and never queues analysis. See [upload storage](UPLOAD_STORAGE.md).
+
 ADR-017, accepted 2026-09-17: use PostgreSQL transactional outbox and leased work items for the local B06 workflow. This replaces the proposed Redis/Celery delivery default for this milestone and implements the queue portion of ADR-003. PostgreSQL is already available and verifies row locking, recovery and atomic publication without a second service. Workers use SKIP LOCKED and fenced leases; fixed checkpoints precede the future LangGraph integration. General broker execution, external side effects and production scale remain unverified. Evidence: [run processing](evidence/2026-09-17-run-processing.md). Reconsider a separate broker if measured scale or operational needs justify it.
 
 ID and title; date; status; problem/context; alternatives considered; decision; consequences; validation evidence; affected requirements; supersedes/superseded-by. For security decisions, state the trust boundary and remaining limitations explicitly.

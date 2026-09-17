@@ -10,6 +10,8 @@ Current milestone: [Durable synthetic run processing](docs/RUN_PROCESSING.md) an
 
 ## Read first
 
+Latest addition: [bounded local raw upload storage](docs/UPLOAD_STORAGE.md). Files remain awaiting isolated inspection; the full upload-to-analysis workflow is not enabled yet.
+
 1. [Project requirements](docs/PRD.md): scope, user stories, measurable acceptance criteria.
 2. [Architecture](docs/ARCHITECTURE.md): services, boundaries, planned repository layout.
 3. [Security and privacy](docs/SECURITY.md): execution isolation and release gates.

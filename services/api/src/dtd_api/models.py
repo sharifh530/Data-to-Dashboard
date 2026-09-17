@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Integer,
+    LargeBinary,
     MetaData,
     String,
     UniqueConstraint,
@@ -86,6 +87,14 @@ class Dataset(Identity, Base):
             name="status",
         ),
     )
+
+
+class RawUpload(Base):
+    __tablename__ = "raw_uploads"
+    dataset_id: Mapped[str] = mapped_column(ForeignKey("datasets.id"), primary_key=True)
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    __table_args__ = (CheckConstraint("size_bytes > 0 AND size_bytes <= 10485760", name="size"),)
 
 
 class DatasetVersion(Identity, Base):

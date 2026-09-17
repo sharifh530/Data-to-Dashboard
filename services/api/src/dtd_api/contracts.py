@@ -41,6 +41,7 @@ class Capabilities(Contract):
     schema_version: Literal["1"] = "1"
     mode: Literal["foundation"] = "foundation"
     uploads_enabled: Literal[False] = False
+    raw_upload_storage_enabled: bool = False
     execution_enabled: Literal[False] = False
     persistence_enabled: bool = False
     local_auth_enabled: bool = False

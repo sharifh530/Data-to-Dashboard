@@ -48,6 +48,8 @@ Use Ctrl+C in each terminal to stop servers. Ports are fixed and startup fails i
 
 ## Verification
 
+Raw uploads are now available through a storage-only API; see [upload storage](UPLOAD_STORAGE.md) for headers, limits and download behavior. Run `npm run db:migrate` first. CSV/SQLite inspection and analysis remain disabled.
+
 ```powershell
 npm run check
 npm run test:browser

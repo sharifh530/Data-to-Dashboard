@@ -39,3 +39,11 @@ Implemented PostgreSQL outbox/work items, fenced leases, three fixed stages, ret
 Validation: npm run check passed (4 protocol tests; 48 Python passed/28 PostgreSQL skipped; lint/types/contracts/build). npm run test:postgres: all 76 passed, no skips; two existing upstream warnings. Includes real concurrency, separate process restart, lease recovery, cancellation/publication race and ownership/revocation. npm run db:check: no drift. npm run dev:worker -- --once succeeded. Renderer unchanged, browser tests not rerun. Initial nested .kilo lint discovery and migration import-order failures corrected. Tooling worktree contents untouched.
 
 Fetched remote main; unchanged from persistence/auth milestone before publication. Authorized commit/push follows documentation updates. Next: resolve B01 for B05, or bounded immutable upload storage with parsing disabled if runtime stays blocked.
+
+## 2026-09-17 — B05 bounded raw upload storage slice
+
+Rechecked sandbox preflight: Docker unreachable, generated execution disabled. Implemented storage-only raw upload endpoint, transactional PostgreSQL bytes/metadata/idempotency, checksum verification, owner-only metadata/download, bounded receipt and per-owner quotas. Migration 7c8ecbbfe69e; ADR-018 documents local bytea instead of unimplemented S3. B05 remains partial: no parsing, inspection, selection, preview or analysis admission.
+
+Validation: npm run check passed (4 protocol tests, 52 Python passed/31 PostgreSQL skipped, lint/types/contracts/build). Final npm run test:postgres passed 84/84 after concurrent quota test; npm run check:python passed; npm run db:check reported no drift. Receiver timeout/disconnect, revocation during upload, corruption, idempotency and ownership covered. Two existing upstream warnings. Renderer unchanged, browser tests not rerun. See docs/evidence/2026-09-17-upload-storage.md.
+
+Updated docs/memory and publishing this completed storage slice under standing authorization. Next: resolve dedicated sandbox for inspection, or authenticated upload/history product UX while visibly reporting inspection blocked.

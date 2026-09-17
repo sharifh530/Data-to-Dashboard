@@ -4,6 +4,8 @@ Target `/api/v1` contracts. Implemented: health/capabilities, local authenticati
 
 ## Common conventions
 
+Implemented storage-only addition: POST `/projects/{id}/raw-datasets?file_format=csv|sqlite` accepts a length-bounded octet-stream and returns 201. GET `/datasets/{id}` and `/datasets/{id}/raw` expose owned metadata/raw download. See [upload storage](UPLOAD_STORAGE.md); the multipart inspection endpoint listed below remains planned.
+
 Opaque UUID resource IDs; UTC timestamps; authenticated same-site secure HttpOnly sessions; CSRF protection on mutations; explicit CORS allowlist. Authentication provider choice is open. All database lookups include owner/project scope. Foreign unauthorized resources return 404. Lists use cursor pagination with maximum page size 100.
 
 Mutation idempotency keys are scoped to owner + route, retained 24 hours, and tied to a request hash; changed payload with same key returns 409. Errors use `{ "error": { "code": "...", "message": "...", "details": {}, "request_id": "...", "retryable": false } }`. Never return internal tracebacks, object credentials, or full data rows in errors.
