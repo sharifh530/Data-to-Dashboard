@@ -5,7 +5,7 @@ import hashlib
 import sqlite3
 from pathlib import Path
 
-from dtd_api.inspection_contracts import InspectionReport
+from dtd_api.inspection_contracts import InspectionReport, ProfileReport
 from dtd_api.inspections import run_isolated
 
 parser = argparse.ArgumentParser()
@@ -24,6 +24,11 @@ def inspect(data, file_format="csv", delimiter=None):
 sample = inspect(Path("samples/synthetic-sales-messy.csv").read_bytes())
 assert sample.status == "ready" and sample.tables[0].row_count == 245
 assert len(sample.tables[0].columns) == 11 and len(sample.tables[0].preview) == 5
+sample_bytes = Path("samples/synthetic-sales-messy.csv").read_bytes()
+profile = ProfileReport.model_validate_json(run_isolated(sample_bytes, "csv", args.image, ",", 0))
+assert profile.status == "ready" and profile.tables[0].row_count == 245
+assert len(profile.tables[0].profile) == 11
+assert profile.tables[0].profile[0].distinct <= 245
 for data in [
     b"\xff",
     b"a\x00b",
@@ -51,6 +56,11 @@ report = inspect(database, "sqlite")
 assert report.status == "ready", report.error
 assert {table.name for table in report.tables} == {"sales", "empty_table"}
 assert next(table for table in report.tables if table.name == "sales").preview == [["001", "42"]]
+sql_profile = ProfileReport.model_validate_json(
+    run_isolated(database, "sqlite", args.image, profile_index=1)
+)
+assert sql_profile.tables[0].name == "sales"
+assert sql_profile.tables[0].profile[1].numeric_min == "42"
 assert inspect(b"not a database", "sqlite").status == "rejected"
 assert inspect(b"SQLite format 3\x00" + b"x" * 1024, "sqlite").status == "rejected"
 for definitions in [
@@ -63,4 +73,4 @@ for definitions in [
     database = db.serialize()
     db.close()
     assert inspect(database, "sqlite").status == "rejected"
-print("18 isolated parser cases passed; no uploaded file parsed on host.")
+print("20 isolated inspector/profile cases passed; no uploaded file parsed on host.")

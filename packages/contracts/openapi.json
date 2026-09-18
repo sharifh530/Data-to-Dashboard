@@ -57,6 +57,77 @@
         "title": "Capabilities",
         "type": "object"
       },
+      "ColumnProfile": {
+        "additionalProperties": false,
+        "properties": {
+          "distinct": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Distinct",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 128,
+            "title": "Name",
+            "type": "string"
+          },
+          "nonnumeric_count": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Nonnumeric Count",
+            "type": "integer"
+          },
+          "numeric_count": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Numeric Count",
+            "type": "integer"
+          },
+          "numeric_max": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numeric Max"
+          },
+          "numeric_min": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numeric Min"
+          },
+          "top_values": {
+            "items": {
+              "$ref": "#/components/schemas/TopValue"
+            },
+            "maxItems": 5,
+            "title": "Top Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "distinct",
+          "numeric_count",
+          "nonnumeric_count",
+          "numeric_min",
+          "numeric_max",
+          "top_values"
+        ],
+        "title": "ColumnProfile",
+        "type": "object"
+      },
       "DatasetPage": {
         "additionalProperties": false,
         "properties": {
@@ -383,6 +454,229 @@
           "revisions"
         ],
         "title": "InspectionView",
+        "type": "object"
+      },
+      "ProfileReport": {
+        "additionalProperties": false,
+        "properties": {
+          "delimiter": {
+            "anyOf": [
+              {
+                "enum": [
+                  ",",
+                  ";",
+                  "\t",
+                  "|"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delimiter"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z0-9_]{1,80}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "format": {
+            "enum": [
+              "csv",
+              "sqlite"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tables": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileTable"
+            },
+            "maxItems": 1,
+            "title": "Tables",
+            "type": "array"
+          },
+          "warnings": {
+            "items": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "sha256",
+          "format",
+          "status",
+          "tables",
+          "warnings",
+          "delimiter",
+          "error"
+        ],
+        "title": "ProfileReport",
+        "type": "object"
+      },
+      "ProfileTable": {
+        "additionalProperties": false,
+        "properties": {
+          "columns": {
+            "items": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "minItems": 1,
+            "title": "Columns",
+            "type": "array"
+          },
+          "missing": {
+            "items": {
+              "maximum": 100000.0,
+              "minimum": 0.0,
+              "type": "integer"
+            },
+            "maxItems": 64,
+            "minItems": 1,
+            "title": "Missing",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 128,
+            "title": "Name",
+            "type": "string"
+          },
+          "preview": {
+            "items": {
+              "items": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "maxItems": 5,
+            "title": "Preview",
+            "type": "array"
+          },
+          "profile": {
+            "items": {
+              "$ref": "#/components/schemas/ColumnProfile"
+            },
+            "maxItems": 64,
+            "minItems": 1,
+            "title": "Profile",
+            "type": "array"
+          },
+          "row_count": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Row Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "columns",
+          "row_count",
+          "missing",
+          "preview",
+          "profile"
+        ],
+        "title": "ProfileTable",
+        "type": "object"
+      },
+      "ProfileView": {
+        "additionalProperties": false,
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "report_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Sha256"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "status",
+          "attempts",
+          "report",
+          "report_sha256",
+          "error"
+        ],
+        "title": "ProfileView",
         "type": "object"
       },
       "ProjectPage": {
@@ -712,6 +1006,28 @@
           "preview"
         ],
         "title": "TablePreview",
+        "type": "object"
+      },
+      "TopValue": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "value": {
+            "maxLength": 128,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "count"
+        ],
+        "title": "TopValue",
         "type": "object"
       }
     }
@@ -1044,6 +1360,190 @@
           }
         },
         "summary": "Capabilities"
+      }
+    },
+    "/api/v1/dataset-versions/{version_id}/profile": {
+      "get": {
+        "operationId": "detail_api_v1_dataset_versions__version_id__profile_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Detail",
+        "tags": [
+          "Isolated profiling"
+        ]
+      },
+      "post": {
+        "operationId": "request_profile_api_v1_dataset_versions__version_id__profile_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Request Profile",
+        "tags": [
+          "Isolated profiling"
+        ]
       }
     },
     "/api/v1/datasets/{dataset_id}": {

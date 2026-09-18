@@ -72,6 +72,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dataset-versions/{version_id}/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail */
+        get: operations["detail_api_v1_dataset_versions__version_id__profile_get"];
+        put?: never;
+        /** Request Profile */
+        post: operations["request_profile_api_v1_dataset_versions__version_id__profile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets/{dataset_id}": {
         parameters: {
             query?: never;
@@ -402,6 +420,23 @@ export interface components {
              */
             uploads_enabled: false;
         };
+        /** ColumnProfile */
+        ColumnProfile: {
+            /** Distinct */
+            distinct: number;
+            /** Name */
+            name: string;
+            /** Nonnumeric Count */
+            nonnumeric_count: number;
+            /** Numeric Count */
+            numeric_count: number;
+            /** Numeric Max */
+            numeric_max: string | null;
+            /** Numeric Min */
+            numeric_min: string | null;
+            /** Top Values */
+            top_values: components["schemas"]["TopValue"][];
+        };
         /** DatasetPage */
         DatasetPage: {
             /** Items */
@@ -510,6 +545,63 @@ export interface components {
             revisions: number;
             /** Selected Table */
             selected_table: string | null;
+            /** Status */
+            status: string;
+        };
+        /** ProfileReport */
+        ProfileReport: {
+            /** Delimiter */
+            delimiter: ("," | ";" | "\t" | "|") | null;
+            /** Error */
+            error: string | null;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "csv" | "sqlite";
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "1";
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "rejected";
+            /** Tables */
+            tables: components["schemas"]["ProfileTable"][];
+            /** Warnings */
+            warnings: string[];
+        };
+        /** ProfileTable */
+        ProfileTable: {
+            /** Columns */
+            columns: string[];
+            /** Missing */
+            missing: number[];
+            /** Name */
+            name: string;
+            /** Preview */
+            preview: (string | null)[][];
+            /** Profile */
+            profile: components["schemas"]["ColumnProfile"][];
+            /** Row Count */
+            row_count: number;
+        };
+        /** ProfileView */
+        ProfileView: {
+            /** Attempts */
+            attempts: number;
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /** Error */
+            error: string | null;
+            report: components["schemas"]["ProfileReport"] | null;
+            /** Report Sha256 */
+            report_sha256: string | null;
             /** Status */
             status: string;
         };
@@ -635,6 +727,13 @@ export interface components {
             preview: (string | null)[][];
             /** Row Count */
             row_count: number;
+        };
+        /** TopValue */
+        TopValue: {
+            /** Count */
+            count: number;
+            /** Value */
+            value: string;
         };
     };
     responses: never;
@@ -885,6 +984,158 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Capabilities"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    detail_api_v1_dataset_versions__version_id__profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileView"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    request_profile_api_v1_dataset_versions__version_id__profile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileView"];
                 };
             };
             /** @description Unauthorized */

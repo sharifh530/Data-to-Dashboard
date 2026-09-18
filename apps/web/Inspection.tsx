@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { components } from '../../packages/contracts/api';
+import { Profile } from './Profile';
 
 type Result = components['schemas']['InspectionView'];
 
@@ -67,5 +68,6 @@ export function Inspection({ id, csrf, format }: { id: string; csrf: string; for
       </>}
       {report.warnings.map(warning => <p className="muted" key={warning}>{warning.replaceAll('_', ' ').toLowerCase()}</p>)}
     </>}
+    {result?.dataset_version_id && <Profile key={result.dataset_version_id} versionId={result.dataset_version_id} csrf={csrf}/>}
   </section>;
 }

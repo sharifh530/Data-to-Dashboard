@@ -8,16 +8,17 @@ Last updated: 2026-09-18
 - Raw byte uploads: 10 MiB/file, 50 MiB/owner, checksums, idempotency and owner-only downloads. Synthetic sample: samples/synthetic-sales-messy.csv, 245 rows/11 columns.
 - NEW: fixed CSV/SQLite inspection runs only inside dedicated WSL gVisor. Durable jobs, 90-second fenced leases, three-attempt recovery, strict bounded reports and hash/format validation. Independent timer reaps expired inspector containers; broker checks timer availability and removes containers before returning reports.
 - Reviewed React workspace at port 8000 offers Inspect dataset, table previews, row/column/empty counts and five sample rows, plus projects/uploads/downloads/sample history/cancel. CSV delimiter choices now trigger bounded reinspection; saving a table creates a durable dataset version with input hash and schema fingerprint.
+- New B07 slice: profile the saved table in gVisor; the owner-only report has missing/distinct/numeric-looking counts, numeric ranges and top-five values for every column. Durable leased job, strict report validation and canonical SHA-256 fingerprint; displayed in the workspace. This is a version-scoped report, not a run artifact.
 - PostgreSQL outbox/leases/checkpoints/SSE and cancellation for fixed synthetic runs. Generated contracts, migrations, locked dependencies and checks. Separate reviewed renderer lab on 4173/4174.
 - dtd-sandbox WSL2 Ubuntu, Docker/runsc; earlier eight isolation and seven resource probes passed. Windows automount/interop disabled; Docker Desktop unchanged.
 
 ## Validation
 
-September 18 latest: npm run test:postgres 105 passed; npm run check 4 JS tests and 63 Python passed/42 PG skipped, lint/format/types/contracts/build passed. Real inspector suite: 18 gVisor cases passed. Opt-in Chromium journey with actual gVisor and the 245-row sample passed, including delimiter revisions, saved table and reload. Earlier mobile overflow checked and screenshots reviewed; independent orphan cleanup observed after WSL startup. Two existing Python deprecation warnings remain. Evidence: docs/evidence/2026-09-18-inspection-configuration.md and inspection.md. Earlier resource/renderer suites not rerun.
+September 18 latest: npm run test:postgres 109 passed; npm run check 4 JS tests and 65 Python passed/44 PG skipped, lint/format/types/contracts/build passed. Real inspector/profile suite: 20 gVisor cases passed. Opt-in Chromium journey with actual gVisor and the 245-row sample passed, including saved table, full profile and reload. Mobile overflow checked and screenshot reviewed. Independent orphan cleanup observed earlier. Two existing Python deprecation warnings remain. Evidence: docs/evidence/2026-09-18-profiling.md. Earlier resource/renderer suites not rerun.
 
 ## Limitations and next concrete action
 
-B01/B05/B12 remain partial. Table selection and delimiter choice now persist; next implement B07 deterministic profiling and immutable artifact manifests from a selected dataset version. Encoding/header overrides and broader ingestion acceptance remain B05. No LangChain/Pandas generation, cleaning, model fitting, generated React build, production broker or hosted deployment exists yet. Inspection readiness does not imply analysis readiness. Running inspection cancellation returns 409; queued jobs can cancel. Same-setting retry is not implemented. Future deletion APIs need concurrent publication tests. The reaper is local recovery, not a hard guarantee across host suspension or daemon failure.
+B01/B05/B07/B12 remain partial. Next implement B08 bounded generated Pandas cleaning with provenance, starting from the selected version and validated profile. B07 still needs run-scoped artifact manifests and retention. Encoding/header overrides remain B05. No LangChain/Pandas generation, cleaning, model fitting, generated React build, production broker or hosted deployment exists yet. Profile values are private owner-only data. Running inspection cancellation returns 409; queued jobs can cancel. Future deletion APIs need concurrent publication tests. The reaper is local recovery, not a hard guarantee across host suspension or daemon failure.
 
 ## Local operations and source control
 
@@ -28,3 +29,5 @@ User authorized milestone pushes to https://github.com/sharifh530/Data-to-Dashbo
 Historical task detail: docs/PROGRESS_REPORT.md and memory/SESSION_LOG.md. memory/CHAT_HANDOFF.md is the prior portable snapshot with a current-state pointer; internal application chat compaction was not tool-accessible. Open decisions: hosted identity, hosting/execution provider, LLM/model/budget and later product design.
 
 Session-end service check: project PostgreSQL running; both new migrations and schema check passed; API returned HTTP 200 on port 8000; local worker reported ready. Both were restarted with the rebuilt pinned inspector configured in ignored .env. Recheck after host/app restarts.
+
+Local service check: new profile migration/schema check passed; API returned HTTP 200 on port 8000; worker reported ready with rebuilt pinned image configured in ignored .env. Both were left running. Recheck after host/app restarts.

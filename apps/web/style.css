@@ -4,3 +4,5 @@
 .data-row>div{min-width:0;flex:1}.inspection{margin-top:18px;max-width:100%}.preview-scroll{overflow:auto;max-width:100%;margin-top:12px}.preview-scroll table{border-collapse:collapse;font-size:12px;min-width:100%}.preview-scroll th,.preview-scroll td{text-align:left;padding:9px 12px;border:1px solid #dde3d8;max-width:220px;overflow-wrap:anywhere;vertical-align:top}.preview-scroll th{background:#edf2e8}.inspection select{max-width:320px}
 .data-row>div{width:100%;max-width:100%}
 .preview-scroll th,.preview-scroll td{min-width:110px}
+.profile{border-top:1px solid #dde3d8;margin-top:20px;padding-top:20px}.profile .preview-scroll th,.profile .preview-scroll td{min-width:110px}.profile .preview-scroll th:first-child{position:sticky;left:0;background:#edf2e8}
+.profile{min-width:0;max-width:100%;overflow:hidden}.profile .preview-scroll{width:100%;max-width:100%}.profile p{overflow-wrap:anywhere}

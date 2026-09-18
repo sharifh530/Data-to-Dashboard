@@ -118,6 +118,26 @@ class Inspection(Base):
     )
 
 
+class Profile(Base):
+    __tablename__ = "profiles"
+    dataset_version_id: Mapped[str] = mapped_column(
+        ForeignKey("dataset_versions.id"), primary_key=True
+    )
+    status: Mapped[str] = mapped_column(String(20), default="queued")
+    token: Mapped[str | None] = mapped_column(String(36))
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    image: Mapped[str] = mapped_column(String(150))
+    report: Mapped[dict[str, object] | None] = mapped_column(JSON)
+    report_sha256: Mapped[str | None] = mapped_column(String(64))
+    error: Mapped[str | None] = mapped_column(String(80))
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('queued','running','ready','rejected','failed','cancelled')", name="status"
+        ),
+    )
+
+
 class DatasetVersion(Identity, Base):
     __tablename__ = "dataset_versions"
     dataset_id: Mapped[str] = mapped_column(String(36))

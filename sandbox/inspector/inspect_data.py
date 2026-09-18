@@ -7,6 +7,8 @@ import json
 import sqlite3
 import sys
 import time
+from collections import Counter
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 MAX_INPUT = 10 * 1024 * 1024
@@ -16,12 +18,15 @@ class Rejected(Exception):
     pass
 
 
-def table_report(name, columns, rows):
+def table_report(name, columns, rows, profile=False):
     if not columns or len(columns) > 64 or any(len(str(col)) > 128 for col in columns):
         raise Rejected("COLUMN_LIMIT")
     preview = []
     count = 0
     missing = [0] * len(columns)
+    frequencies = [Counter() for _ in columns] if profile else []
+    numeric = [{"count": 0, "min": None, "max": None} for _ in columns] if profile else []
+    nonnumeric = [0] * len(columns) if profile else []
     for row in rows:
         count += 1
         if count > 100000:
@@ -33,6 +38,25 @@ def table_report(name, columns, rows):
                 missing[i] += 1
             if isinstance(value, (str, bytes)) and len(value) > 65536:
                 raise Rejected("CELL_LIMIT")
+            if profile and value is not None and value != "":
+                visible = f"[BLOB: {len(value)} bytes]" if isinstance(value, bytes) else str(value)
+                frequencies[i][visible] += 1
+                try:
+                    if len(visible) > 64 or isinstance(value, bytes):
+                        raise InvalidOperation
+                    number = Decimal(visible)
+                    if not number.is_finite():
+                        raise InvalidOperation
+                    summary = numeric[i]
+                    summary["count"] += 1
+                    summary["min"] = (
+                        number if summary["min"] is None else min(summary["min"], number)
+                    )
+                    summary["max"] = (
+                        number if summary["max"] is None else max(summary["max"], number)
+                    )
+                except InvalidOperation:
+                    nonnumeric[i] += 1
         if count <= 5:
             preview.append(
                 [
@@ -44,16 +68,35 @@ def table_report(name, columns, rows):
                     for value in row
                 ]
             )
-    return {
+    result = {
         "name": name,
         "columns": [str(col) for col in columns],
         "row_count": count,
         "missing": missing,
         "preview": preview,
     }
+    if profile:
+        result["profile"] = [
+            {
+                "name": str(columns[i]),
+                "distinct": len(frequencies[i]),
+                "numeric_count": numeric[i]["count"],
+                "nonnumeric_count": nonnumeric[i],
+                "numeric_min": str(numeric[i]["min"])[:128] if numeric[i]["count"] else None,
+                "numeric_max": str(numeric[i]["max"])[:128] if numeric[i]["count"] else None,
+                "top_values": [
+                    {"value": value[:128], "count": amount}
+                    for value, amount in sorted(
+                        frequencies[i].items(), key=lambda entry: (-entry[1], entry[0])
+                    )[:5]
+                ],
+            }
+            for i in range(len(columns))
+        ]
+    return result
 
 
-def inspect_csv(data, override=None):
+def inspect_csv(data, override=None, profile=False):
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError as error:
@@ -75,13 +118,13 @@ def inspect_csv(data, override=None):
     warnings = []
     if len(set(columns)) != len(columns) or any(not col.strip() for col in columns):
         warnings.append("DUPLICATE_OR_EMPTY_HEADERS")
-    result = table_report("CSV", columns, reader)
+    result = table_report("CSV", columns, reader, profile)
     if result["row_count"] == 0:
         warnings.append("EMPTY_TABLE")
     return [result], warnings, delimiter
 
 
-def inspect_sqlite(data):
+def inspect_sqlite(data, profile_index=None):
     if not data.startswith(b"SQLite format 3\x00"):
         raise Rejected("SQLITE_HEADER")
     path = Path("/tmp/input.sqlite")
@@ -105,6 +148,10 @@ def inspect_sqlite(data):
         )
         if not names or len(names) > 10 or any(len(name) > 128 for name in names):
             raise Rejected("TABLE_LIMIT_OR_NO_ORDINARY_TABLES")
+        if profile_index is not None:
+            if profile_index >= len(names):
+                raise Rejected("TABLE_INDEX")
+            names = [names[profile_index]]
         reports = []
         for name in names:
             quoted = '"' + name.replace('"', '""') + '"'
@@ -124,7 +171,10 @@ def inspect_sqlite(data):
             selection = ",".join('"' + col.replace('"', '""') + '"' for col in columns)
             reports.append(
                 table_report(
-                    name, columns, db.execute(f"SELECT {selection} FROM {quoted} LIMIT 100001")
+                    name,
+                    columns,
+                    db.execute(f"SELECT {selection} FROM {quoted} LIMIT 100001"),
+                    profile_index is not None,
                 )
             )
             db.set_authorizer(None)
@@ -134,8 +184,16 @@ def inspect_sqlite(data):
 
 
 def main():
-    if len(sys.argv) not in {2, 3} or (
-        len(sys.argv) == 3 and sys.argv[2] not in {",", ";", "\t", "|"}
+    if len(sys.argv) < 2 or len(sys.argv) > 5:
+        raise SystemExit(2)
+    mode = sys.argv[3] if len(sys.argv) > 3 else "inspect"
+    index = int(sys.argv[4]) if len(sys.argv) == 5 else None
+    delimiter_override = sys.argv[2] if len(sys.argv) >= 3 and sys.argv[2] != "auto" else None
+    if (
+        delimiter_override not in {None, ",", ";", "\t", "|"}
+        or mode not in {"inspect", "profile"}
+        or (mode == "profile" and index not in range(10))
+        or (mode == "inspect" and index is not None)
     ):
         raise SystemExit(2)
     data = sys.stdin.buffer.read(MAX_INPUT + 1)
@@ -145,11 +203,11 @@ def main():
         if not data or len(data) > MAX_INPUT:
             raise Rejected("INPUT_SIZE")
         if sys.argv[1] == "csv":
-            tables, warnings, delimiter = inspect_csv(
-                data, sys.argv[2] if len(sys.argv) == 3 else None
-            )
+            if mode == "profile" and index != 0:
+                raise Rejected("TABLE_INDEX")
+            tables, warnings, delimiter = inspect_csv(data, delimiter_override, mode == "profile")
         elif sys.argv[1] == "sqlite":
-            tables, warnings, delimiter = inspect_sqlite(data)
+            tables, warnings, delimiter = inspect_sqlite(data, index if mode == "profile" else None)
         else:
             raise Rejected("FORMAT")
         result.update(

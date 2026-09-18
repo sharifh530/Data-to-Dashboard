@@ -38,12 +38,18 @@ test('real local sign-in, upload, history, cancellation, refresh and logout', as
     await page.getByRole('button', { name: 'Reinspect with delimiter' }).click();
     await expect(page.getByText('245 rows · 11 columns', { exact: false })).toBeVisible({ timeout: 60000 });
     await page.getByRole('button', { name: 'Use this table' }).click();
+    await page.getByRole('button', { name: 'Profile selected table' }).click();
+    await expect(page.getByText('Profile: ready', { exact: true })).toBeVisible({ timeout: 60000 });
+    await expect(page.getByText('245 rows profiled · 11 columns')).toBeVisible();
   }
   await page.getByRole('button', { name: 'Start sample run' }).click();
   await expect(page.getByText('Waiting for the local worker.')).toBeVisible();
   await page.reload();
   await expect(page.getByRole('link', { name: 'Download original' })).toBeVisible();
-  if (process.env.DTD_TEST_INSPECTION_IMAGE) await expect(page.getByRole('button', { name: 'Table saved' })).toBeVisible();
+  if (process.env.DTD_TEST_INSPECTION_IMAGE) {
+    await expect(page.getByRole('button', { name: 'Table saved' })).toBeVisible();
+    await expect(page.getByText('Profile: ready', { exact: true })).toBeVisible();
+  }
   await page.getByRole('button', { name: 'Cancel run' }).click();
   await expect(page.getByText('cancelled', { exact: true })).toBeVisible();
   await page.screenshot({ path: 'test-results/workspace-desktop.png', fullPage: true });

@@ -4,6 +4,7 @@ import threading
 
 from dtd_api.database import check_schema, make_engine
 from dtd_api.inspections import inspection_once
+from dtd_api.profiles import profile_once
 from dtd_api.run_engine import work_once
 from dtd_api.settings import Settings
 
@@ -28,6 +29,7 @@ def main() -> None:
             work_once(engine)
             if settings.inspection_image:
                 inspection_once(engine)
+                profile_once(engine)
             if args.once:
                 break
             stop.wait(0.5)

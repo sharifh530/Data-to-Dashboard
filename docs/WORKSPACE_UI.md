@@ -15,3 +15,5 @@ Desktop and phone layouts use labeled controls, keyboard-visible native focus, s
 September 18 addition: **Inspect dataset** queues fixed CSV/SQLite parsing in gVisor. The owner-only preview shows table choice, row/column/empty counts and five rows. A later slice added optional CSV delimiter selection and **Use this table**, which stores a versioned table choice for later analysis. Changing the delimiter runs inspection again and clears the prior choice. See [setup and limits](INSPECTION.md). The browser acceptance suite can exercise real inspection when `DTD_TEST_INSPECTION_IMAGE` is configured.
 
 Remaining B12 work: persistent dataset configuration, analysis progress, dashboard/model views, exports, recovery refinements and comprehensive accessibility checks. Hosted sign-in and analysis execution remain disabled.
+
+The profiling slice adds **Profile selected table** after a saved choice. It shows counts, numeric-looking ranges and frequent values returned by the isolated worker; see [profiling](PROFILING.md). The table can be horizontally scrolled on narrow screens. It does not infer a target or train a model.

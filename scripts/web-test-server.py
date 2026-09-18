@@ -10,6 +10,7 @@ from dtd_api.auth import issue_ticket
 from dtd_api.database import migrate
 from dtd_api.inspections import inspection_once
 from dtd_api.main import create_app
+from dtd_api.profiles import profile_once
 from dtd_api.settings import Settings
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
@@ -37,6 +38,7 @@ stop = threading.Event()
 def inspect_pending():
     while not stop.wait(0.5):
         inspection_once(engine)
+        profile_once(engine)
 
 
 worker = threading.Thread(target=inspect_pending, daemon=True) if inspection_image else None

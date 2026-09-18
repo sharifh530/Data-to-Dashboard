@@ -188,7 +188,13 @@ def cancel(dataset_id: UUID, principal: MUTATION, db: DB) -> InspectionView:
     return view(item)
 
 
-def run_isolated(data: bytes, file_format: str, image: str, delimiter: str | None = None) -> bytes:
+def run_isolated(
+    data: bytes,
+    file_format: str,
+    image: str,
+    delimiter: str | None = None,
+    profile_index: int | None = None,
+) -> bytes:
     command = [
         "wsl",
         "-d",
@@ -210,6 +216,8 @@ def run_isolated(data: bytes, file_format: str, image: str, delimiter: str | Non
     if delimiter:
         names = {",": "comma", ";": "semicolon", "\t": "tab", "|": "pipe"}
         command.extend(["--delimiter", names[delimiter]])
+    if profile_index is not None:
+        command.extend(["--profile-index", str(profile_index)])
     # Linux broker caps output and removes the container before returning this bounded report.
     result = subprocess.run(command, input=data, capture_output=True, timeout=60, check=False)
     if result.returncode != 0 or len(result.stdout) > 524288:

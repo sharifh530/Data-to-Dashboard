@@ -16,6 +16,7 @@ def main():
     parser.add_argument("--image", required=True)
     parser.add_argument("--format", required=True, choices=["csv", "sqlite"])
     parser.add_argument("--delimiter", choices=["comma", "semicolon", "tab", "pipe"])
+    parser.add_argument("--profile-index", type=int, choices=range(10))
     args = parser.parse_args()
     if args.delimiter and args.format != "csv":
         raise SystemExit(2)
@@ -37,6 +38,10 @@ def main():
     command.append(args.format)
     if args.delimiter:
         command.append({"comma": ",", "semicolon": ";", "tab": "\t", "pipe": "|"}[args.delimiter])
+    elif args.profile_index is not None:
+        command.append("auto")
+    if args.profile_index is not None:
+        command.extend(["profile", str(args.profile_index)])
     output = bytearray()
     overflow = threading.Event()
     process = None

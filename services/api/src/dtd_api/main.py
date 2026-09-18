@@ -81,6 +81,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
 
     from dtd_api.auth import router as auth_router
     from dtd_api.inspections import router as inspection_router
+    from dtd_api.profiles import router as profile_router
     from dtd_api.projects import router as project_router
     from dtd_api.runs import router as run_router
     from dtd_api.uploads import router as upload_router
@@ -90,6 +91,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.include_router(run_router)
     app.include_router(upload_router)
     app.include_router(inspection_router)
+    app.include_router(profile_router)
 
     @app.get("/", include_in_schema=False)
     def workspace() -> FileResponse:
