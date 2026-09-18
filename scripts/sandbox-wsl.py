@@ -1,4 +1,4 @@
-"""Copy only reviewed probe sources into the dedicated distro and run fixed commands."""
+"""Copy only reviewed runtime sources into the dedicated distro and run fixed commands."""
 
 import argparse
 import io
@@ -18,8 +18,11 @@ def main() -> None:
     if args.action == "sync":
         files = [ROOT / "scripts/sandbox-preflight.py", ROOT / "scripts/sandbox-probe.py"]
         files += [ROOT / "scripts/sandbox-resources.py"]
+        files += [ROOT / "scripts/sandbox-inspect.py"]
+        files += [ROOT / "scripts/inspection-reaper.py"]
         files += sorted((ROOT / "sandbox/probe").glob("*"))
         files += sorted((ROOT / "sandbox/resources").glob("*"))
+        files += sorted((ROOT / "sandbox/inspector").glob("*"))
         files += sorted((ROOT / "services/execution-broker/src/dtd_execution").glob("*.py"))
         archive = io.BytesIO()
         with tarfile.open(fileobj=archive, mode="w") as tar:
@@ -34,7 +37,7 @@ def main() -> None:
         subprocess.run(
             PREFIX + ["tar", "-xf", "-"], input=archive.getvalue(), check=True, timeout=30
         )
-        print("Synced reviewed probe sources only; no credentials, uploads or host mounts.")
+        print("Synced reviewed runtime sources only; no credentials, uploads or host mounts.")
         return
     command = PREFIX + [
         "env",

@@ -1,6 +1,6 @@
 # Implementation roadmap and backlog
 
-Status: B02 and B03 complete; B04 local authentication/project ownership implemented, with hosted identity explicitly tracked as B04H. B01 Python runtime verification remains blocked. See `memory/TASKS.md`. Priorities: P0 MVP, P1 later. Public deployment remains gated by security evidence.
+Status: B02/B03 and local B04 implemented; B06 complete for synthetic scope. B01 local gVisor probes and B05 isolated inspection now run; both remain partial. Hosted identity is B04H. See `memory/TASKS.md`. Priorities: P0 MVP, P1 later. Public deployment remains gated by security evidence.
 
 | ID | Priority | Work package | Depends on | Exit evidence |
 | --- | --- | --- | --- | --- |

@@ -2,7 +2,7 @@
 
 An autonomous analyst that turns messy CSV or SQLite data into a cleaned dataset, an explainable baseline predictive model when appropriate, and a custom interactive React dashboard.
 
-**Status: local workspace, raw upload storage, synthetic run processing and tested gVisor probes implemented; full analyst application not yet implemented.** Uploaded-file inspection, LLM analysis, modeling and generated-code execution remain disabled. See the [detailed progress report](docs/PROGRESS_REPORT.md) and [compact continuation summary](memory/CHAT_HANDOFF.md).
+**Status: local workspace, raw uploads, isolated CSV/SQLite previews, synthetic run processing and tested gVisor probes implemented; full analyst application not yet implemented.** LLM analysis, modeling and generated-code execution remain disabled. See the [detailed progress report](docs/PROGRESS_REPORT.md) and [current state](memory/STATE.md).
 
 Use [Getting started](docs/GETTING_STARTED.md) to run the foundation and [verification evidence](docs/evidence/2026-09-16-foundation.md) for tested behavior and blockers.
 
@@ -12,7 +12,7 @@ Current milestone: [Durable synthetic run processing](docs/RUN_PROCESSING.md) an
 
 Open the [authenticated workspace](docs/WORKSPACE_UI.md) to create projects, upload raw files and follow sample runs. It is served by the local API on port 8000; port 4173 remains the renderer test lab.
 
-Latest addition: [bounded local raw upload storage](docs/UPLOAD_STORAGE.md). Files remain awaiting isolated inspection; the full upload-to-analysis workflow is not enabled yet.
+Latest addition: [isolated CSV/SQLite inspection](docs/INSPECTION.md). The configured local worker now produces bounded table previews inside gVisor; the full upload-to-analysis workflow is not enabled yet.
 
 1. [Project requirements](docs/PRD.md): scope, user stories, measurable acceptance criteria.
 2. [Architecture](docs/ARCHITECTURE.md): services, boundaries, planned repository layout.

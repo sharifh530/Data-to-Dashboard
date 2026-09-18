@@ -176,3 +176,7 @@ Two upstream Python test-client warnings and a Docker legacy-builder warning rem
 - Preserve raw bytes, ownership, bounded budgets and isolation. Never put tokens, private data or provider payloads in Git or memory.
 
 For a fresh conversation, use [the compact handoff](../memory/CHAT_HANDOFF.md). It summarizes context without deleting this report or the append-only session history.
+
+## September 18 implementation update
+
+The historical task-by-task snapshot above is supplemented by real isolated CSV/SQLite inspection, durable jobs, orphan cleanup and workspace previews. See [inspection runbook](INSPECTION.md), [acceptance evidence](evidence/2026-09-18-inspection.md) and [current state](../memory/STATE.md). These supersede earlier statements that all inspection is blocked; generated analysis/modeling remain unavailable.

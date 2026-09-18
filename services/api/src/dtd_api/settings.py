@@ -10,9 +10,15 @@ class Settings(BaseSettings):
     environment: str = "local"
     database_url: SecretStr | None = None
     app_origin: str = "http://127.0.0.1:8000"
+    inspection_image: str | None = None
 
     @model_validator(mode="after")
     def local_origin(self) -> "Settings":
+        if self.inspection_image:
+            import re
+
+            if not re.fullmatch(r"sha256:[a-f0-9]{64}", self.inspection_image):
+                raise ValueError("Inspection image must be a pinned local image ID")
         value = urlsplit(self.app_origin)
         if value.scheme not in {"http", "https"} or value.hostname not in {
             "localhost",

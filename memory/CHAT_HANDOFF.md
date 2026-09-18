@@ -1,6 +1,6 @@
 # Compact continuation handoff
 
-Prepared 2026-09-18; implementation snapshot through `f638134` on September 17. This is a portable chat summary, not a claim that the application's internal conversation was compacted. Read current STATE.md, TASKS.md and AGENTS.md before editing; this snapshot can become stale.
+Prepared 2026-09-18; the original snapshot below covers `f638134` on September 17. **Superseded for current status by STATE.md:** September 18 adds real isolated inspection, durable jobs, orphan cleanup and browser previews; see docs/INSPECTION.md. This is a portable chat summary, not a claim that the application's internal conversation was compacted. Read current STATE.md, TASKS.md and AGENTS.md before editing.
 
 ## Goal and authorization
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { components } from '../../packages/contracts/api';
 import './style.css';
+import { Inspection } from './Inspection';
 
 type Project = components['schemas']['ProjectView'];
 type Dataset = components['schemas']['StoredDataset'];
@@ -112,12 +113,12 @@ function App() {
         </form></section> : <>
         <section className="heading"><p className="eyebrow">PROJECT OVERVIEW</p><h1>{projects.items.find(project => project.id === projectId)?.name ?? 'Your next discovery'}</h1><p>Bring your data together. Keep track of what happens next.</p></section>
         {!projectId ? <section className="card"><h2>A fresh start</h2><p>Create your first project using the form in the sidebar.</p></section> : <>
-          <div className="boundary"><strong>File storage is ready. Analysis is coming next.</strong><p>Files can be uploaded and downloaded now. Inspection, cleaning, modeling, and generated dashboards are unavailable until the isolated analysis service is connected.</p></div>
+          <div className="boundary"><strong>Store and inspect your data. Analysis is coming next.</strong><p>Upload a file, then request an isolated inspection to review its tables and preview rows. Cleaning, modeling, and generated dashboards are not available yet.</p></div>
           <div className="columns"><section className="card"><span className="step">01 / ADD YOUR DATA</span><h2>A place for your raw data</h2><p className="muted">CSV or SQLite · Up to 10 MiB per file · 50 MiB per account</p>
             <form onSubmit={e => { e.preventDefault(); if (!file) return; const selected = file; void act(async () => {
               if (!selected.size || selected.size > 10485760) throw new Error('Choose a file between 1 byte and 10 MiB.');
               await api<Dataset>(`/projects/${projectId}/raw-datasets?file_format=${format}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'Idempotency-Key': uploadKey }, body: selected });
-              setUploadKey(crypto.randomUUID()); setRefresh(n => n + 1); setNotice('File stored. Isolated inspection is not available yet.');
+              setUploadKey(crypto.randomUUID()); setRefresh(n => n + 1); setNotice('File stored. Use Inspect dataset below to request a preview.');
             }); }}>
               <label className="filebox" htmlFor="file"><span className="upload-icon">↑</span><strong>{file?.name ?? 'Choose a dataset'}</strong><span>Original bytes are preserved.</span></label><input id="file" type="file" accept=".csv,.sqlite,.sqlite3,.db" disabled={busy} onChange={e => { setFile(e.target.files?.[0] ?? null); setUploadKey(crypto.randomUUID()); }}/>
               <label htmlFor="format">File format</label><select id="format" value={format} disabled={busy} onChange={e => { setFormat(e.target.value); setUploadKey(crypto.randomUUID()); }}><option value="csv">CSV</option><option value="sqlite">SQLite</option></select>
@@ -125,7 +126,7 @@ function App() {
             </form></section>
             <section className="card demo"><span className="step">02 / EXPLORE THE WORKFLOW</span><h2>Try a sample run</h2><p>See how a run moves through its stages using fixed sales totals. This sample does not use your uploaded files or train a model.</p><div className="sample-mark">3<span>reviewed sample stages</span></div><button className="secondary" disabled={busy || !!active} onClick={() => void act(async () => { await post(`/projects/${projectId}/demo-runs`, {}); setRefresh(n => n + 1); })}>Start sample run</button><p className="muted">Progress updates every two seconds while this page is open.</p></section></div>
           <section className="card listing"><div className="section-title"><h2>Stored datasets</h2><button className="text-button" disabled={busy} onClick={() => setRefresh(n => n + 1)}>Refresh</button></div>
-            {loading ? <p role="status">Loading project…</p> : !datasets.items.length ? <p className="empty">No files yet. Your first upload will appear here.</p> : datasets.items.map(dataset => <article className="data-row" key={dataset.id}><div><strong>{dataset.format.toUpperCase()} dataset · {dataset.id.slice(0, 8)}</strong><p>{dataset.size_bytes < 1024 ? `${dataset.size_bytes} bytes` : `${(dataset.size_bytes / 1024).toFixed(1)} KiB`} · Awaiting isolated inspection</p><details><summary>Checksum and identifier</summary><code>{dataset.sha256}</code><code>{dataset.id}</code></details></div><a className="download" href={`/api/v1/datasets/${dataset.id}/raw`}>Download original ↓</a></article>)}
+            {loading ? <p role="status">Loading project…</p> : !datasets.items.length ? <p className="empty">No files yet. Your first upload will appear here.</p> : datasets.items.map(dataset => <article className="data-row" key={dataset.id}><div><strong>{dataset.format.toUpperCase()} dataset · {dataset.id.slice(0, 8)}</strong><p>{dataset.size_bytes < 1024 ? `${dataset.size_bytes} bytes` : `${(dataset.size_bytes / 1024).toFixed(1)} KiB`} · {dataset.inspection_status ? 'Inspection ' + dataset.inspection_status : 'Awaiting isolated inspection'}</p><details><summary>Checksum and identifier</summary><code>{dataset.sha256}</code><code>{dataset.id}</code></details><Inspection id={dataset.id} csrf={session.csrf_token}/></div><a className="download" href={`/api/v1/datasets/${dataset.id}/raw`}>Download original ↓</a></article>)}
             {datasets.next_cursor && <button className="secondary" disabled={busy} onClick={() => void act(async () => { const next = await api<Page<Dataset>>(`/projects/${projectId}/datasets?cursor=${datasets.next_cursor}`); setDatasets({ items: [...datasets.items, ...next.items], next_cursor: next.next_cursor }); })}>More datasets</button>}
           </section>
           <section className="card listing"><h2>Run history <span className="pill">SAMPLE DATA ONLY</span></h2>{!loading && !runs.items.length && <p className="empty">No runs yet. Try the sample workflow above.</p>}
@@ -140,5 +141,3 @@ function App() {
 }
 
 createRoot(document.getElementById('root')!).render(<App/>);
-
-

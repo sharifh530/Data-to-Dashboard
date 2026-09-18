@@ -1,0 +1,5 @@
+[Unit]
+Description=Reap expired Data-to-Dashboard inspector containers
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/dtd/scripts/inspection-reaper.py

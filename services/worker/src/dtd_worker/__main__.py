@@ -3,12 +3,13 @@ import signal
 import threading
 
 from dtd_api.database import check_schema, make_engine
+from dtd_api.inspections import inspection_once
 from dtd_api.run_engine import work_once
 from dtd_api.settings import Settings
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Process fixed synthetic runs from PostgreSQL")
+    parser = argparse.ArgumentParser(description="Process synthetic runs and isolated inspections")
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
     settings = Settings()
@@ -21,10 +22,12 @@ def main() -> None:
     stop = threading.Event()
     signal.signal(signal.SIGINT, lambda *_: stop.set())
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
-    print("Synthetic worker ready. Generated execution remains disabled.", flush=True)
+    print("Local worker ready. Generated execution remains disabled.", flush=True)
     try:
         while not stop.is_set():
             work_once(engine)
+            if settings.inspection_image:
+                inspection_once(engine)
             if args.once:
                 break
             stop.wait(0.5)

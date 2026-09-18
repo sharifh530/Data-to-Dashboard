@@ -15,7 +15,16 @@ from starlette.requests import ClientDisconnect
 from dtd_api.auth import AUTH, DB, MUTATION, authenticated, digest
 from dtd_api.contracts import Contract
 from dtd_api.errors import ApiError
-from dtd_api.models import AuditEvent, Dataset, IdempotencyRecord, Project, RawUpload, User, now
+from dtd_api.models import (
+    AuditEvent,
+    Dataset,
+    IdempotencyRecord,
+    Inspection,
+    Project,
+    RawUpload,
+    User,
+    now,
+)
 from dtd_api.projects import KEY, owned
 
 router = APIRouter(prefix="/api/v1", tags=["Raw upload storage"])
@@ -32,6 +41,7 @@ class StoredDataset(Contract):
     sha256: str
     status: Literal["awaiting_isolated_inspection"] = "awaiting_isolated_inspection"
     analysis_ready: Literal[False] = False
+    inspection_status: str | None = None
 
 
 class DatasetPage(Contract):
@@ -80,12 +90,14 @@ def metadata(db: Session, dataset_id: str, owner: str) -> StoredDataset:
     if row is None:
         raise ApiError(404, "NOT_FOUND", "Stored dataset not found.")
     dataset, size = row
+    inspection = db.get(Inspection, dataset.id)
     return StoredDataset(
         id=UUID(dataset.id),
         project_id=UUID(dataset.project_id),
         format=dataset.format,
         size_bytes=size,
         sha256=dataset.raw_sha256,
+        inspection_status=inspection.status if inspection else None,
     )
 
 
