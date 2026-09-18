@@ -107,6 +107,10 @@ class Inspection(Base):
     image: Mapped[str] = mapped_column(String(150))
     report: Mapped[dict[str, object] | None] = mapped_column(JSON)
     error: Mapped[str | None] = mapped_column(String(80))
+    delimiter_override: Mapped[str | None] = mapped_column(String(1))
+    revisions: Mapped[int] = mapped_column(Integer, default=0)
+    selected_table: Mapped[str | None] = mapped_column(String(128))
+    selected_version_id: Mapped[str | None] = mapped_column(ForeignKey("dataset_versions.id"))
     __table_args__ = (
         CheckConstraint(
             "status IN ('queued','running','ready','rejected','failed','cancelled')", name="status"

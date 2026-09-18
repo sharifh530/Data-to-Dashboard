@@ -13,8 +13,10 @@ parser.add_argument("--image", required=True)
 args = parser.parse_args()
 
 
-def inspect(data, file_format="csv"):
-    report = InspectionReport.model_validate_json(run_isolated(data, file_format, args.image))
+def inspect(data, file_format="csv", delimiter=None):
+    report = InspectionReport.model_validate_json(
+        run_isolated(data, file_format, args.image, delimiter)
+    )
     assert report.sha256 == hashlib.sha256(data).hexdigest()
     return report
 
@@ -33,6 +35,9 @@ for data in [
     assert inspect(data).status == "rejected"
 assert inspect(b"a,a\n001,2\n").warnings == ["DUPLICATE_OR_EMPTY_HEADERS"]
 assert inspect(b"a;b\n001;2\n").tables[0].preview[0][0] == "001"
+forced = inspect(b"a;b\n001;2\n", delimiter=";")
+assert forced.delimiter == ";" and forced.tables[0].columns == ["a", "b"]
+assert inspect(b"a|b\n001|2\n", delimiter="|").tables[0].preview == [["001", "2"]]
 assert inspect(b"a\n").tables[0].row_count == 0
 assert inspect(b"a\n" + b"x\n" * 100001).status == "rejected"
 db = sqlite3.connect(":memory:")
@@ -58,4 +63,4 @@ for definitions in [
     database = db.serialize()
     db.close()
     assert inspect(database, "sqlite").status == "rejected"
-print("16 isolated parser cases passed; no uploaded file parsed on host.")
+print("18 isolated parser cases passed; no uploaded file parsed on host.")

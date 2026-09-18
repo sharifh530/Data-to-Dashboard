@@ -124,6 +124,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/datasets/{dataset_id}/inspection/selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Select Table */
+        post: operations["select_table_api_v1_datasets__dataset_id__inspection_selection_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets/{dataset_id}/raw": {
         parameters: {
             query?: never;
@@ -443,6 +460,11 @@ export interface components {
              */
             status: "ok";
         };
+        /** InspectionOptions */
+        InspectionOptions: {
+            /** Delimiter */
+            delimiter?: ("," | ";" | "\t" | "|") | null;
+        };
         /** InspectionReport */
         InspectionReport: {
             /** Delimiter */
@@ -477,9 +499,17 @@ export interface components {
             attempts: number;
             /** Dataset Id */
             dataset_id: string;
+            /** Dataset Version Id */
+            dataset_version_id: string | null;
+            /** Delimiter Override */
+            delimiter_override: string | null;
             /** Error */
             error: string | null;
             report: components["schemas"]["InspectionReport"] | null;
+            /** Revisions */
+            revisions: number;
+            /** Selected Table */
+            selected_table: string | null;
             /** Status */
             status: string;
         };
@@ -587,6 +617,11 @@ export interface components {
              * @constant
              */
             status: "awaiting_isolated_inspection";
+        };
+        /** TableChoice */
+        TableChoice: {
+            /** Table */
+            table: string;
         };
         /** TablePreview */
         TablePreview: {
@@ -1069,7 +1104,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InspectionOptions"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             202: {
@@ -1146,6 +1185,86 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InspectionView"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    select_table_api_v1_datasets__dataset_id__inspection_selection_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TableChoice"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

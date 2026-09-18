@@ -15,7 +15,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", required=True)
     parser.add_argument("--format", required=True, choices=["csv", "sqlite"])
+    parser.add_argument("--delimiter", choices=["comma", "semicolon", "tab", "pipe"])
     args = parser.parse_args()
+    if args.delimiter and args.format != "csv":
+        raise SystemExit(2)
     policy = ProbePolicy(args.image)
     if not inspect_runtime().runtime_available:
         raise SystemExit(2)
@@ -32,6 +35,8 @@ def main():
     command.insert(-1, "--interactive")
     command.insert(-1, "--label=dtd.inspector=1")
     command.append(args.format)
+    if args.delimiter:
+        command.append({"comma": ",", "semicolon": ";", "tab": "\t", "pipe": "|"}[args.delimiter])
     output = bytearray()
     overflow = threading.Event()
     process = None

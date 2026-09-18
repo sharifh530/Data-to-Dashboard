@@ -12,14 +12,14 @@ Last updated: 2026-09-18. Detailed scope/dependencies: [roadmap](../docs/ROADMAP
 | B03 | DONE | Metadata models/migration, generated contracts, upgrade/downgrade recovery and PostgreSQL schema checks. Evidence: docs/evidence/2026-09-17-persistence-auth.md. |
 | B04 | DONE | Local operator-issued login, hashed sessions, CSRF, project ownership and concurrent idempotency tests. Hosted authentication is B04H, not completed. |
 | B04H | TODO | Required before hosted release: identity provider, abuse controls, HTTPS/browser sign-in and recovery integration. |
-| B05 | PARTIAL | Raw storage plus durable isolated CSV/SQLite inspection and preview slice complete (2026-09-18). Persistent table selection and parsing overrides remain. Acceptance: docs/evidence/2026-09-18-inspection.md. |
+| B05 | PARTIAL | Raw storage, isolated CSV/SQLite preview, durable table choice/dataset version and bounded CSV delimiter override complete (2026-09-18). Encoding/header overrides and full ingestion acceptance remain. Evidence: docs/evidence/2026-09-18-inspection-configuration.md. |
 | B06 | DONE (synthetic scope) | PostgreSQL outbox/leases/checkpoints, SSE/history/cancel and process recovery. Evidence: docs/evidence/2026-09-17-run-processing.md. Executor cancellation/LangGraph remain B01/B08. |
 | B07 | TODO | Profiling and validated artifacts |
 | B08 | TODO | Generated Pandas workflow |
 | B09 | TODO | Baseline evaluation |
 | B10 | TODO | Dashboard specification/query/fallback |
 | B11 | TODO | Generated React pipeline |
-| B12 | PARTIAL | Local shell, projects, upload/download, real isolated table previews and sample history/cancel implemented. Mobile scrolling verified. Analysis configuration/dashboard/model UX and exports remain. docs/evidence/2026-09-18-inspection.md. |
+| B12 | PARTIAL | Local shell, projects, upload/download, isolated previews, delimiter and table configuration, sample history/cancel implemented. Dashboard/model UX and exports remain. docs/evidence/2026-09-18-inspection-configuration.md. |
 | B13 | TODO | Retention, deletion, quotas, controls |
 | B14 | TODO | Release verification and operational rehearsal |
 | B15 | TODO | Post-MVP dashboard revisions |

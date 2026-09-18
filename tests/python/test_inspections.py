@@ -4,7 +4,7 @@ from datetime import timedelta
 import pytest
 from dtd_api.inspection_contracts import InspectionReport
 from dtd_api.inspections import inspection_once
-from dtd_api.models import Dataset, Inspection, now
+from dtd_api.models import Dataset, DatasetVersion, Inspection, now
 from pydantic import ValidationError
 from sqlalchemy import update
 from sqlalchemy.orm import Session
@@ -14,7 +14,7 @@ from test_uploads import send
 IMAGE = "sha256:" + "a" * 64
 
 
-def fixture_report(data, file_format, _image):
+def fixture_report(data, file_format, _image, delimiter=None):
     return (
         InspectionReport(
             schema_version="1",
@@ -23,7 +23,7 @@ def fixture_report(data, file_format, _image):
             status="ready",
             warnings=[],
             error=None,
-            delimiter=",",
+            delimiter=delimiter or ",",
             tables=[
                 {
                     "name": "CSV",
@@ -79,10 +79,12 @@ def test_inspection_rejects_invalid_and_stale_publication(db_engine, monkeypatch
         url = f"/api/v1/datasets/{dataset}/inspection"
         client.post(url, headers=headers)
 
-        def inspect(data, fmt, image):
+        def inspect(data, fmt, image, delimiter=None):
             if failure == "runtime":
                 raise RuntimeError("raw private error")
-            report = InspectionReport.model_validate_json(fixture_report(data, fmt, image))
+            report = InspectionReport.model_validate_json(
+                fixture_report(data, fmt, image, delimiter)
+            )
             if failure == "hash":
                 report.sha256 = "0" * 64
             if failure == "shape":
@@ -130,3 +132,33 @@ def test_report_schema_is_strict():
     raw["tables"][0]["row_count"] = True
     with pytest.raises(ValidationError):
         InspectionReport.model_validate(raw)
+
+
+def test_delimiter_revision_and_persisted_selection(db_engine, monkeypatch):
+    monkeypatch.setattr("dtd_api.inspections.run_isolated", fixture_report)
+    with client_for(db_engine) as client, client_for(db_engine) as bob:
+        headers, _, dataset = setup(client, db_engine)
+        url = f"/api/v1/datasets/{dataset}/inspection"
+        assert client.post(url, headers=headers).status_code == 202
+        assert inspection_once(db_engine)
+        selection = url + "/selection"
+        assert client.post(selection, headers=headers, json={"table": "missing"}).status_code == 422
+        bob_headers = login(bob, db_engine, "bob")
+        assert bob.post(selection, headers=bob_headers, json={"table": "CSV"}).status_code == 404
+        saved = client.post(selection, headers=headers, json={"table": "CSV"}).json()
+        assert saved["selected_table"] == "CSV" and saved["dataset_version_id"]
+        with Session(db_engine) as db:
+            version = db.get(DatasetVersion, saved["dataset_version_id"])
+            assert version.dataset_id == dataset and version.selection["table"] == "CSV"
+            assert len(version.schema_hash) == 64
+        assert client.get(url).json()["dataset_version_id"] == saved["dataset_version_id"]
+        assert client.post(url, headers=headers, json={"delimiter": "&"}).status_code == 422
+        changed = client.post(url, headers=headers, json={"delimiter": ";"}).json()
+        assert changed["status"] == "queued" and changed["selected_table"] is None
+        assert changed["dataset_version_id"] is None
+        assert changed["revisions"] == 1 and changed["report"] is None
+        assert client.post(url, headers=headers, json={"delimiter": "|"}).status_code == 409
+        assert inspection_once(db_engine)
+        report = client.get(url).json()
+        assert report["report"]["delimiter"] == ";"
+        assert client.post(url, headers=headers, json={"delimiter": ";"}).json()["revisions"] == 1

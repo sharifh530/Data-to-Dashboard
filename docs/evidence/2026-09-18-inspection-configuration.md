@@ -1,0 +1,9 @@
+# Inspection configuration acceptance — 2026-09-18
+
+Delivered optional comma/semicolon/tab/pipe CSV delimiter selection, with at most three reinspection revisions per raw upload. Delimiter changes queue the fixed gVisor inspector against unchanged bytes and clear the prior report and current table choice. Names cross the Windows-to-WSL bridge as fixed safe codes. Users can save a table from a ready report; the API creates a `dataset_versions` row carrying the table name, effective delimiter, raw SHA-256 and schema fingerprint. The selected version ID is returned and persists across refresh. Cross-owner and unknown-table requests are rejected.
+
+Validation: `npm run test:postgres` passed **105 tests** with no skips, including migration upgrade/downgrade and version-selection checks. `npm run check` passed **4 JS tests, 63 Python tests/42 PostgreSQL-only skips**, lint, types, contracts and builds. Real gVisor inspector suite passed **18 cases**, including explicit semicolon and pipe parsing. Opt-in Chromium browser journey passed upload, table save, delimiter reinspection twice, cleared choice, final save and persistence after reload. Desktop and mobile layout remained within the viewport. Two existing upstream Python warnings remain.
+
+The inspector image rebuilt from the reviewed source uses the same pinned base and gVisor policy. Local `.env` was updated with the new image ID; API and worker were restarted, schema check passed and HTTP 200 verified on port 8000. The image ID is local runtime state, not a portable deployment reference.
+
+Limits: CSV encoding and header-row overrides remain unsupported. A saved dataset version is configuration provenance only; no profiling, cleaning or modeling job consumes it yet. Prior generic resource/renderer probes were not rerun; security conclusions retain their original scope.

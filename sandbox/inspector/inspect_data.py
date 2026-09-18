@@ -53,7 +53,7 @@ def table_report(name, columns, rows):
     }
 
 
-def inspect_csv(data):
+def inspect_csv(data, override=None):
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError as error:
@@ -61,10 +61,13 @@ def inspect_csv(data):
     if "\x00" in text:
         raise Rejected("NUL_BYTE")
     csv.field_size_limit(65536)
-    try:
-        delimiter = csv.Sniffer().sniff(text[:32768], delimiters=",;\t|").delimiter
-    except csv.Error:
-        delimiter = ","
+    if override:
+        delimiter = override
+    else:
+        try:
+            delimiter = csv.Sniffer().sniff(text[:32768], delimiters=",;\t|").delimiter
+        except csv.Error:
+            delimiter = ","
     reader = csv.reader(io.StringIO(text, newline=""), delimiter=delimiter, strict=True)
     columns = next(reader, None)
     if columns is None:
@@ -131,6 +134,10 @@ def inspect_sqlite(data):
 
 
 def main():
+    if len(sys.argv) not in {2, 3} or (
+        len(sys.argv) == 3 and sys.argv[2] not in {",", ";", "\t", "|"}
+    ):
+        raise SystemExit(2)
     data = sys.stdin.buffer.read(MAX_INPUT + 1)
     sha = hashlib.sha256(data).hexdigest()
     result = {"schema_version": "1", "sha256": sha, "format": sys.argv[1]}
@@ -138,7 +145,9 @@ def main():
         if not data or len(data) > MAX_INPUT:
             raise Rejected("INPUT_SIZE")
         if sys.argv[1] == "csv":
-            tables, warnings, delimiter = inspect_csv(data)
+            tables, warnings, delimiter = inspect_csv(
+                data, sys.argv[2] if len(sys.argv) == 3 else None
+            )
         elif sys.argv[1] == "sqlite":
             tables, warnings, delimiter = inspect_sqlite(data)
         else:

@@ -184,6 +184,30 @@
         "title": "Health",
         "type": "object"
       },
+      "InspectionOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "delimiter": {
+            "anyOf": [
+              {
+                "enum": [
+                  ",",
+                  ";",
+                  "\t",
+                  "|"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delimiter"
+          }
+        },
+        "title": "InspectionOptions",
+        "type": "object"
+      },
       "InspectionReport": {
         "additionalProperties": false,
         "properties": {
@@ -284,6 +308,28 @@
             "title": "Dataset Id",
             "type": "string"
           },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version Id"
+          },
+          "delimiter_override": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delimiter Override"
+          },
           "error": {
             "anyOf": [
               {
@@ -305,6 +351,21 @@
               }
             ]
           },
+          "revisions": {
+            "title": "Revisions",
+            "type": "integer"
+          },
+          "selected_table": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Table"
+          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -315,7 +376,11 @@
           "status",
           "attempts",
           "report",
-          "error"
+          "error",
+          "delimiter_override",
+          "selected_table",
+          "dataset_version_id",
+          "revisions"
         ],
         "title": "InspectionView",
         "type": "object"
@@ -566,6 +631,22 @@
           "sha256"
         ],
         "title": "StoredDataset",
+        "type": "object"
+      },
+      "TableChoice": {
+        "additionalProperties": false,
+        "properties": {
+          "table": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Table",
+            "type": "string"
+          }
+        },
+        "required": [
+          "table"
+        ],
+        "title": "TableChoice",
         "type": "object"
       },
       "TablePreview": {
@@ -1164,6 +1245,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/InspectionOptions"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Options"
+              }
+            }
+          }
+        },
         "responses": {
           "202": {
             "content": {
@@ -1330,6 +1428,109 @@
           }
         },
         "summary": "Cancel",
+        "tags": [
+          "Isolated inspection"
+        ]
+      }
+    },
+    "/api/v1/datasets/{dataset_id}/inspection/selection": {
+      "post": {
+        "operationId": "select_table_api_v1_datasets__dataset_id__inspection_selection_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TableChoice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Select Table",
         "tags": [
           "Isolated inspection"
         ]
