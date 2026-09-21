@@ -40,15 +40,20 @@ class DemoRunCreate(Contract):
     fixture: Literal["sales-v1"] = "sales-v1"
 
 
+class AnalysisRunCreate(Contract):
+    dataset_version_id: UUID
+
+
 class RunView(Contract):
     id: UUID
     project_id: UUID
-    mode: Literal["synthetic"] = "synthetic"
+    mode: Literal["synthetic", "analysis"] = "synthetic"
     status: str
     stage: str | None
     event_sequence: int
     completed_stages: list[str]
     result: dict[str, object] | None
+    dataset_version_id: UUID | None = None
 
 
 class RunPage(Contract):
@@ -57,14 +62,21 @@ class RunPage(Contract):
 
 
 def view(run: Run) -> RunView:
+    mode: Literal["synthetic", "analysis"] = (
+        "analysis"
+        if isinstance(run.config, dict) and run.config.get("mode") == "analysis"
+        else "synthetic"
+    )
     return RunView(
         id=UUID(run.id),
         project_id=UUID(run.project_id),
+        mode=mode,
         status=run.status,
         stage=run.stage,
         event_sequence=run.event_sequence,
         completed_stages=list(run.checkpoint),
         result=run.result,
+        dataset_version_id=UUID(run.dataset_version_id) if run.dataset_version_id else None,
     )
 
 
@@ -148,6 +160,89 @@ def create_demo(
     db.add(run)
     db.flush()
     emit(db, run, "run_queued", {"mode": "synthetic", "fixture": body.fixture})
+    db.add(Outbox(project_id=run.project_id, topic="run.requested", payload={"run_id": run.id}))
+    db.add(
+        IdempotencyRecord(
+            owner_id=principal.user.id,
+            route=route,
+            key=idempotency_key,
+            request_hash=fingerprint,
+            resource_id=run.id,
+            expires_at=now() + timedelta(hours=24),
+        )
+    )
+    db.add(
+        AuditEvent(
+            actor_id=principal.user.id,
+            action="run.created",
+            resource_id=run.id,
+            request_id=request.state.request_id,
+        )
+    )
+    db.commit()
+    return view(run)
+
+
+@router.post("/projects/{project_id}/runs", response_model=RunView, status_code=202)
+def create_analysis_run(
+    project_id: UUID,
+    body: AnalysisRunCreate,
+    request: Request,
+    principal: MUTATION,
+    db: DB,
+    idempotency_key: KEY,
+) -> RunView:
+    owned(db, str(project_id), principal.user.id)
+    db.execute(select(User).where(User.id == principal.user.id).with_for_update()).scalar_one()
+    route = f"POST /projects/{project_id}/runs"
+    db.execute(
+        delete(IdempotencyRecord).where(
+            IdempotencyRecord.owner_id == principal.user.id,
+            IdempotencyRecord.route == route,
+            IdempotencyRecord.key == idempotency_key,
+            IdempotencyRecord.expires_at <= now(),
+        )
+    )
+    fingerprint = digest(json.dumps(body.model_dump(mode="json"), sort_keys=True))
+    replay = db.get(IdempotencyRecord, (principal.user.id, route, idempotency_key))
+    if replay:
+        if replay.request_hash != fingerprint:
+            raise ApiError(409, "IDEMPOTENCY_CONFLICT", "Key belongs to a different request.")
+        return view(owned_run(db, replay.resource_id, principal.user.id))
+    active = db.scalar(
+        select(Run.id)
+        .join(Project, Project.id == Run.project_id)
+        .where(Project.owner_id == principal.user.id, Run.status.not_in(TERMINAL))
+        .limit(1)
+    )
+    if active:
+        raise ApiError(
+            429, "RUN_LIMIT", "Finish or cancel your current run before starting another."
+        )
+
+    version_id = str(body.dataset_version_id)
+    version = db.scalar(
+        select(DatasetVersion).where(
+            DatasetVersion.id == version_id, DatasetVersion.project_id == str(project_id)
+        )
+    )
+    if version is None:
+        raise ApiError(404, "NOT_FOUND", "Dataset version not found.")
+
+    from dtd_api.models import Profile
+
+    profile = db.get(Profile, version_id)
+    if profile is None or profile.status != "ready":
+        raise ApiError(409, "PROFILE_REQUIRED", "Dataset version must be profiled before analysis.")
+
+    run = Run(
+        project_id=str(project_id),
+        dataset_version_id=version.id,
+        config={"mode": "analysis", "dataset_version_id": version.id},
+    )
+    db.add(run)
+    db.flush()
+    emit(db, run, "run_queued", {"mode": "analysis", "dataset_version_id": version.id})
     db.add(Outbox(project_id=run.project_id, topic="run.requested", payload={"run_id": run.id}))
     db.add(
         IdempotencyRecord(
@@ -296,7 +391,8 @@ async def events(
 ) -> StreamingResponse:
     owner_id, token = principal.user.id, principal.token
     engine: Engine = request.app.state.engine
-    db.close()  # Never retain the request dependency transaction for the stream lifetime.
+    # Never retain the request dependency transaction for the stream lifetime.
+    db.close()
     first = await to_thread.run_sync(
         event_batch, engine, str(run_id), owner_id, token, int(last_event_id)
     )

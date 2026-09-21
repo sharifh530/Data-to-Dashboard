@@ -23,10 +23,10 @@ def main() -> None:
     stop = threading.Event()
     signal.signal(signal.SIGINT, lambda *_: stop.set())
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
-    print("Local worker ready. Generated execution remains disabled.", flush=True)
+    print("Local worker ready.", flush=True)
     try:
         while not stop.is_set():
-            work_once(engine)
+            work_once(engine, settings.transformer_image)
             if settings.inspection_image:
                 inspection_once(engine)
                 profile_once(engine)

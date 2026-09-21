@@ -12,17 +12,19 @@ PREFIX = ["wsl", "--distribution", "dtd-sandbox", "--user", "root", "--cd", "/op
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["sync", "preflight", "probe", "resources"])
+    parser.add_argument("action", choices=["sync", "preflight", "probe", "resources", "transform"])
     parser.add_argument("--image")
     args = parser.parse_args()
     if args.action == "sync":
         files = [ROOT / "scripts/sandbox-preflight.py", ROOT / "scripts/sandbox-probe.py"]
         files += [ROOT / "scripts/sandbox-resources.py"]
         files += [ROOT / "scripts/sandbox-inspect.py"]
+        files += [ROOT / "scripts/sandbox-transform.py"]
         files += [ROOT / "scripts/inspection-reaper.py"]
         files += sorted((ROOT / "sandbox/probe").glob("*"))
         files += sorted((ROOT / "sandbox/resources").glob("*"))
         files += sorted((ROOT / "sandbox/inspector").glob("*"))
+        files += sorted((ROOT / "sandbox/transformer").glob("*"))
         files += sorted((ROOT / "services/execution-broker/src/dtd_execution").glob("*.py"))
         archive = io.BytesIO()
         with tarfile.open(fileobj=archive, mode="w") as tar:
@@ -45,11 +47,11 @@ def main() -> None:
         "python3",
         f"scripts/sandbox-{args.action}.py",
     ]
-    if args.action in {"probe", "resources"}:
+    if args.action in {"probe", "resources", "transform"}:
         from dtd_execution.policy import ProbePolicy
 
         if not args.image:
-            parser.error("probe/resources requires --image")
+            parser.error("probe/resources/transform requires --image")
         ProbePolicy(args.image)
         command += ["--image", args.image]
     raise SystemExit(subprocess.run(command, timeout=180, check=False).returncode)

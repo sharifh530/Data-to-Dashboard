@@ -8,11 +8,16 @@ from uuid import uuid4
 from sqlalchemy import Engine, and_, func, or_, select
 from sqlalchemy.orm import Session
 
+from dtd_api.artifacts import store_artifact
+from dtd_api.cleaning_generator import generate_cleaning_workflow
+from dtd_api.inspection_contracts import ProfileReport
 from dtd_api.models import (
     Dataset,
     DatasetVersion,
     Outbox,
+    Profile,
     Project,
+    RawUpload,
     Run,
     RunEvent,
     StageAttempt,
@@ -20,9 +25,11 @@ from dtd_api.models import (
     WorkItem,
     now,
 )
+from dtd_api.transformations import run_isolated_transform
 
 TERMINAL = {"succeeded", "succeeded_with_warnings", "failed", "cancelled"}
 STAGES = ("profile_fixture", "summarize_fixture", "publish_fixture")
+ANALYSIS_STAGES = ("clean_dataset",)
 LEASE_SECONDS = 5
 MAX_ATTEMPTS = 3
 DEADLINE_SECONDS = 600
@@ -50,7 +57,7 @@ def inputs_available(db: Session, run: Run) -> bool:
                 DatasetVersion.id == run.dataset_version_id,
                 Project.deleted_at.is_(None),
                 Dataset.deleted_at.is_(None),
-                Dataset.status == "ready",
+                Dataset.status.in_(["ready", "validating"]),
                 User.active.is_(True),
             )
             .with_for_update(of=(Project, Dataset, User))
@@ -109,6 +116,7 @@ class Claim:
     generation: int
     stage: str
     attempt_id: str
+    mode: str = "synthetic"
 
 
 def claim_one(engine: Engine) -> Claim | None:
@@ -135,13 +143,16 @@ def claim_one(engine: Engine) -> Claim | None:
         if run.status == "cancelling" or not inputs_available(db, run):
             terminal(db, run, job, "cancelled", "Cancellation or unavailable input")
             return None
-        if run.config != {"mode": "synthetic", "fixture": "sales-v1"}:
+        is_synthetic = run.config == {"mode": "synthetic", "fixture": "sales-v1"}
+        is_analysis = isinstance(run.config, dict) and run.config.get("mode") == "analysis"
+        if not (is_synthetic or is_analysis):
             terminal(db, run, job, "failed", "Unsupported workflow; execution remains disabled")
             return None
         if run.started_at and (timestamp - utc(run.started_at)).total_seconds() >= DEADLINE_SECONDS:
             terminal(db, run, job, "failed", "Run deadline exceeded")
             return None
-        stage = next((item for item in STAGES if item not in run.checkpoint), None)
+        stages = STAGES if is_synthetic else ANALYSIS_STAGES
+        stage = next((item for item in stages if item not in run.checkpoint), None)
         if stage is None:
             terminal(db, run, job, "failed", "Invalid workflow checkpoint")
             return None
@@ -181,7 +192,14 @@ def claim_one(engine: Engine) -> Claim | None:
         db.add(attempt)
         db.flush()
         emit(db, run, "stage_started", {"stage": stage, "attempt": previous + 1})
-        return Claim(run.id, job.token, run.generation, stage, attempt.id)
+        return Claim(
+            run_id=run.id,
+            token=job.token,
+            generation=run.generation,
+            stage=stage,
+            attempt_id=attempt.id,
+            mode="analysis" if is_analysis else "synthetic",
+        )
 
 
 def heartbeat(engine: Engine, claim: Claim) -> bool:
@@ -236,9 +254,13 @@ def complete(engine: Engine, claim: Claim, output: dict[str, object]) -> bool:
         if run.started_at and (now() - utc(run.started_at)).total_seconds() >= DEADLINE_SECONDS:
             terminal(db, run, job, "failed", "Run deadline exceeded")
             return False
-        if len(json.dumps(output)) > 65536 or output != fixture_result(claim.stage):
+        is_synthetic = run.config == {"mode": "synthetic", "fixture": "sales-v1"}
+        if is_synthetic and (
+            len(json.dumps(output)) > 65536 or output != fixture_result(claim.stage)
+        ):
             terminal(db, run, job, "failed", "Synthetic stage output failed validation")
             return False
+        stages = STAGES if is_synthetic else ANALYSIS_STAGES
         attempt = db.get(StageAttempt, claim.attempt_id)
         assert attempt is not None
         attempt.status = "succeeded"
@@ -246,18 +268,135 @@ def complete(engine: Engine, claim: Claim, output: dict[str, object]) -> bool:
         emit(db, run, "stage_completed", {"stage": claim.stage})
         job.token = None
         job.lease_expires_at = None
-        if claim.stage == STAGES[-1]:
+        if claim.stage == stages[-1]:
             run.result = output
-            terminal(db, run, job, "succeeded", "Synthetic workflow completed; no model executed")
+            terminal(
+                db,
+                run,
+                job,
+                "succeeded",
+                "Synthetic workflow completed; no model executed"
+                if is_synthetic
+                else "Dataset cleaning completed; artifacts stored.",
+            )
         else:
             job.state = "pending"
         return True
 
 
-def work_once(engine: Engine) -> bool:
+def execute_clean_dataset(engine: Engine, claim: Claim, transformer_image: str | None) -> bool:
+    if not transformer_image:
+        with Session(engine) as db, db.begin():
+            run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+            job = db.get(WorkItem, claim.run_id)
+            if run and job:
+                terminal(db, run, job, "failed", "The isolated transformer is not configured.")
+        return True
+
+    with Session(engine) as db:
+        run = db.get(Run, claim.run_id)
+        assert run is not None
+        version = db.get(DatasetVersion, run.dataset_version_id)
+        if version is None:
+            with db.begin():
+                run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+                job = db.get(WorkItem, claim.run_id)
+                if run and job:
+                    terminal(db, run, job, "failed", "Dataset version not found.")
+            return True
+
+        raw = db.get(RawUpload, version.dataset_id)
+        profile = db.get(Profile, version.id)
+        dataset = db.get(Dataset, version.dataset_id)
+        if (
+            raw is None
+            or profile is None
+            or profile.status != "ready"
+            or profile.report is None
+            or dataset is None
+        ):
+            with db.begin():
+                run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+                job = db.get(WorkItem, claim.run_id)
+                if run and job:
+                    terminal(db, run, job, "failed", "Dataset or profile not ready.")
+            return True
+
+        profile_report = ProfileReport.model_validate(profile.report)
+        sel = version.selection if isinstance(version.selection, dict) else {}
+        delim_val = sel.get("delimiter")
+        tbl_val = sel.get("table")
+        delimiter = str(delim_val) if isinstance(delim_val, str) else None
+        table_name = str(tbl_val) if isinstance(tbl_val, str) else None
+        raw_bytes = raw.content
+        file_format = dataset.format
+        project_id = run.project_id
+
+    try:
+        script, _ = generate_cleaning_workflow(profile_report)
+        cleaning_report, cleaned_csv = run_isolated_transform(
+            data=raw_bytes,
+            file_format=file_format,
+            image=transformer_image,
+            script=script,
+            delimiter=delimiter,
+            table_name=table_name,
+        )
+    except Exception as exc:
+        with Session(engine) as db, db.begin():
+            run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+            job = db.get(WorkItem, claim.run_id)
+            if run and job:
+                terminal(db, run, job, "failed", f"Transformation runtime error: {exc}")
+        return True
+
+    with Session(engine) as db, db.begin():
+        run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+        job = db.get(WorkItem, claim.run_id)
+        if run and job and run.status == "cancelling" and job.token == claim.token:
+            terminal(db, run, job, "cancelled", "Worker acknowledged cancellation")
+            return False
+        if not valid_claim(run, job, claim):
+            return False
+        assert run is not None and job is not None
+
+        if cleaning_report.status != "ready":
+            terminal(db, run, job, "failed", f"Cleaning rejected: {cleaning_report.error}")
+            return False
+
+        store_artifact(db, project_id, claim.run_id, "cleaned_data", "cleaned.csv", cleaned_csv)
+        store_artifact(
+            db,
+            project_id,
+            claim.run_id,
+            "cleaning_report",
+            "cleaning_report.json",
+            cleaning_report.model_dump_json().encode(),
+        )
+        store_artifact(
+            db, project_id, claim.run_id, "generated_script", "clean_dataset.py", script.encode()
+        )
+
+        output = cleaning_report.model_dump()
+        attempt = db.get(StageAttempt, claim.attempt_id)
+        assert attempt is not None
+        attempt.status = "succeeded"
+        run.checkpoint = {**run.checkpoint, claim.stage: output}
+        emit(db, run, "stage_completed", {"stage": claim.stage})
+        job.token = None
+        job.lease_expires_at = None
+        run.result = output
+        terminal(db, run, job, "succeeded", "Dataset cleaning completed; artifacts stored.")
+        return True
+
+
+def work_once(engine: Engine, transformer_image: str | None = None) -> bool:
     dispatched = dispatch_one(engine)
     claim = claim_one(engine)
     if claim is None:
         return dispatched
-    complete(engine, claim, fixture_result(claim.stage))
+    if claim.mode == "synthetic":
+        complete(engine, claim, fixture_result(claim.stage))
+    elif claim.mode == "analysis" and claim.stage == "clean_dataset":
+        execute_clean_dataset(engine, claim, transformer_image)
     return True

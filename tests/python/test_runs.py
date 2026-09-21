@@ -235,3 +235,112 @@ def test_postgres_worker_process_restart(postgres_engine):
         assert complete(postgres_engine, recovered, fixture_result(recovered.stage))
         work_once(postgres_engine)
         assert client.get(f"/api/v1/runs/{run_id}").json()["status"] == "succeeded"
+
+
+def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
+    import hashlib
+
+    from dtd_api.cleaning_contracts import CleaningReport, CleaningSummary
+    from dtd_api.inspections import inspection_once
+    from dtd_api.profiles import profile_once
+    from test_inspections import fixture_report, setup
+    from test_profiles import fixed_profile
+
+    monkeypatch.setattr("dtd_api.inspections.run_isolated", fixture_report)
+    monkeypatch.setattr("dtd_api.profiles.run_isolated", fixed_profile)
+
+    fake_csv = b"col_a,col_b\n1,2\n"
+
+    def fake_transform(data, file_format, image, script, delimiter=None, table_name=None):
+        report = CleaningReport(
+            schema_version="1",
+            status="ready",
+            input_sha256=hashlib.sha256(data).hexdigest(),
+            output_sha256=hashlib.sha256(fake_csv).hexdigest(),
+            summary=CleaningSummary(
+                original_rows=2,
+                cleaned_rows=2,
+                original_columns=2,
+                cleaned_columns=2,
+                duplicate_rows_removed=0,
+            ),
+            operations=[],
+            lineage=[],
+            warnings=[],
+        )
+        return report, fake_csv
+
+    monkeypatch.setattr("dtd_api.run_engine.run_isolated_transform", fake_transform)
+
+    with client_for(db_engine) as client, client_for(db_engine) as bob:
+        headers, project, dataset = setup(client, db_engine)
+        inspection_url = f"/api/v1/datasets/{dataset}/inspection"
+        assert client.post(inspection_url, headers=headers).status_code == 202
+        assert inspection_once(db_engine)
+        version_id = client.post(
+            inspection_url + "/selection", headers=headers, json={"table": "CSV"}
+        ).json()["dataset_version_id"]
+
+        run_url = f"/api/v1/projects/{project}/runs"
+        assert (
+            client.post(
+                run_url,
+                headers={**headers, "Idempotency-Key": "analysis-1"},
+                json={"dataset_version_id": version_id},
+            ).status_code
+            == 409
+        )
+
+        profile_url = f"/api/v1/dataset-versions/{version_id}/profile"
+        assert client.post(profile_url, headers=headers).status_code == 202
+        assert profile_once(db_engine)
+
+        res = client.post(
+            run_url,
+            headers={**headers, "Idempotency-Key": "analysis-1"},
+            json={"dataset_version_id": version_id},
+        )
+        assert res.status_code == 202
+        run_id = res.json()["id"]
+        assert res.json()["mode"] == "analysis"
+
+        replay = client.post(
+            run_url,
+            headers={**headers, "Idempotency-Key": "analysis-1"},
+            json={"dataset_version_id": version_id},
+        )
+        assert replay.status_code == 202
+        assert replay.json()["id"] == run_id
+
+        assert (
+            client.post(
+                run_url,
+                headers={**headers, "Idempotency-Key": "analysis-2"},
+                json={"dataset_version_id": version_id},
+            ).status_code
+            == 429
+        )
+
+        fake_transformer_image = "sha256:" + "a" * 64
+        assert work_once(db_engine, fake_transformer_image)
+
+        run_data = client.get(f"/api/v1/runs/{run_id}").json()
+        assert run_data["status"] == "succeeded"
+        assert "clean_dataset" in run_data["completed_stages"]
+        assert run_data["result"]["status"] == "ready"
+
+        art_url = f"/api/v1/projects/{project}/runs/{run_id}/artifacts"
+        artifacts = client.get(art_url).json()
+        assert len(artifacts) == 3
+        kinds = {a["kind"] for a in artifacts}
+        assert kinds == {"cleaned_data", "cleaning_report", "generated_script"}
+
+        cleaned_art = next(a for a in artifacts if a["kind"] == "cleaned_data")
+        dl_res = client.get(f"{art_url}/{cleaned_art['id']}/download")
+        assert dl_res.status_code == 200
+        assert dl_res.content == fake_csv
+
+        bob_headers = login(bob, db_engine, "bob")
+        assert bob.get(art_url, headers=bob_headers).status_code == 404
+        dl_url = f"{art_url}/{cleaned_art['id']}/download"
+        assert bob.get(dl_url, headers=bob_headers).status_code == 404

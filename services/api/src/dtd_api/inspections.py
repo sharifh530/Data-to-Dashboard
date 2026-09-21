@@ -153,6 +153,9 @@ def select_table(
         schema_hash=schema_hash,
     )
     db.add(version)
+    dataset_row = db.get(Dataset, str(dataset_id))
+    if dataset_row:
+        dataset_row.status = "ready"
     db.flush()
     item.selected_table = choice.table
     item.selected_version_id = version.id

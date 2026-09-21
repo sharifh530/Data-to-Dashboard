@@ -18,3 +18,7 @@ playwright-report/
 .DS_Store
 .local/
 .kilo/
+.agents/
+.claude/
+skills-lock.json
+samples/fifa_eda_stats.csv

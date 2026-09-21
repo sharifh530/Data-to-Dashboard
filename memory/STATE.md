@@ -1,24 +1,25 @@
 # Current project state
 
-Last updated: 2026-09-18
+Last updated: 2026-09-21
 
 ## Implemented
 
 - Local FastAPI/PostgreSQL, operator-issued tickets, hashed sessions, CSRF/Origin checks and owner-scoped projects. Hosted startup disabled.
 - Raw byte uploads: 10 MiB/file, 50 MiB/owner, checksums, idempotency and owner-only downloads. Synthetic sample: samples/synthetic-sales-messy.csv, 245 rows/11 columns.
-- NEW: fixed CSV/SQLite inspection runs only inside dedicated WSL gVisor. Durable jobs, 90-second fenced leases, three-attempt recovery, strict bounded reports and hash/format validation. Independent timer reaps expired inspector containers; broker checks timer availability and removes containers before returning reports.
-- Reviewed React workspace at port 8000 offers Inspect dataset, table previews, row/column/empty counts and five sample rows, plus projects/uploads/downloads/sample history/cancel. CSV delimiter choices now trigger bounded reinspection; saving a table creates a durable dataset version with input hash and schema fingerprint.
-- New B07 slice: profile the saved table in gVisor; the owner-only report has missing/distinct/numeric-looking counts, numeric ranges and top-five values for every column. Durable leased job, strict report validation and canonical SHA-256 fingerprint; displayed in the workspace. This is a version-scoped report, not a run artifact.
-- PostgreSQL outbox/leases/checkpoints/SSE and cancellation for fixed synthetic runs. Generated contracts, migrations, locked dependencies and checks. Separate reviewed renderer lab on 4173/4174.
-- dtd-sandbox WSL2 Ubuntu, Docker/runsc; earlier eight isolation and seven resource probes passed. Windows automount/interop disabled; Docker Desktop unchanged.
+- Fixed CSV/SQLite inspection and profiling run only inside dedicated WSL gVisor. Durable jobs, fenced leases, three-attempt recovery, strict bounded reports and hash/format validation. Independent timer reaps expired containers.
+- Reviewed React workspace at port 8000 offers Inspect dataset, table previews, row/column/empty counts and five sample rows, delimiter revision, durable dataset versioning, and profile report visualization.
+- NEW (B08): Bounded generated Pandas cleaning workflow with column lineage and provenance tracking. Dedicated pinned transformer container in WSL gVisor (`runsc`), binary stdin/stdout framing, strict resource caps (1 CPU, 512MB RAM, 60s timeout, 10MB output cap). AST safety validation for generated code.
+- NEW (B08): Analysis run orchestration (`POST /projects/{project_id}/runs`, stage progression `clean_dataset`), and run-scoped immutable artifact store (`Artifact` model, SHA-256 integrity verification, owner-isolated retrieval and download).
+- PostgreSQL outbox/leases/checkpoints/SSE and cancellation for runs. Generated contracts, migrations, locked dependencies and checks. Separate reviewed renderer lab on 4173/4174.
+- dtd-sandbox WSL2 Ubuntu, Docker/runsc; pinned inspector and transformer images.
 
 ## Validation
 
-September 18 latest: npm run test:postgres 109 passed; npm run check 4 JS tests and 65 Python passed/44 PG skipped, lint/format/types/contracts/build passed. Real inspector/profile suite: 20 gVisor cases passed. Opt-in Chromium journey with actual gVisor and the 245-row sample passed, including saved table, full profile and reload. Mobile overflow checked and screenshot reviewed. Independent orphan cleanup observed earlier. Two existing Python deprecation warnings remain. Evidence: docs/evidence/2026-09-18-profiling.md. Earlier resource/renderer suites not rerun.
+September 21: `npm run test:postgres` 114 passed (0 failures, 0 skips); `npm run check` passed 4 JS tests, 69 Python passed (45 PG skipped), lint, format, type checks, contracts, and builds passed cleanly. Real gVisor acceptance suite: transformer passed on `samples/synthetic-sales-messy.csv` (245 rows -> 240 rows, 5 duplicates dropped, whitespace stripped), verified safe rejection of failing scripts and invalid return types. Evidence: docs/evidence/2026-09-21-cleaning-provenance.md.
 
 ## Limitations and next concrete action
 
-B01/B05/B07/B12 remain partial. Next implement B08 bounded generated Pandas cleaning with provenance, starting from the selected version and validated profile. B07 still needs run-scoped artifact manifests and retention. Encoding/header overrides remain B05. No LangChain/Pandas generation, cleaning, model fitting, generated React build, production broker or hosted deployment exists yet. Profile values are private owner-only data. Running inspection cancellation returns 409; queued jobs can cancel. Future deletion APIs need concurrent publication tests. The reaper is local recovery, not a hard guarantee across host suspension or daemon failure.
+B01/B05/B07/B12 remain partial; B08 is complete. Next milestone: B09 Baseline evaluation (feature selection, baseline modeling split before fitting preprocessing, scikit-learn evaluation metrics inside gVisor). LLM integration for code generation remains future work (heuristics-based generator currently active). Run cancellation during active gVisor work fences publication and cancels safely.
 
 ## Local operations and source control
 

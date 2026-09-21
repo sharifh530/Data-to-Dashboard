@@ -101,3 +101,19 @@ Validation: 105 PostgreSQL-backed tests passed; npm run check passed four JS tes
 Added fixed gVisor profile pass for the currently saved dataset version. It counts missing/distinct/numeric-looking/other values, finite numeric ranges and top-five values for each column. Added durable fenced profile claims, owner-scoped API, strict schema/lineage checks, canonical SHA-256 report fingerprint, migration, generated contracts and reviewed React profile table. A changed selection removes access to prior profile. No generated Pandas or model execution enabled.
 
 Validation: 109 PostgreSQL-backed tests passed; npm run check passed 4 JS tests, 65 Python passed/44 PostgreSQL-only skipped, lint/format/types/contracts/build. Rebuilt image passed 20 real gVisor inspector/profile cases, including sample CSV and selected SQLite table. Opt-in Chromium journey passed end-to-end profiling and mobile overflow check; screenshot reviewed. Fixed numeric accumulation to use bounded aggregates and corrected mobile overflow. Earlier general resource/renderer suites not rerun. Two upstream Python warnings remain. Next: B08 generated Pandas cleaning/provenance with stronger execution boundary and run-scoped artifacts. Authorized milestone commit/push follows.
+
+## 2026-09-21 — Generated Pandas cleaning workflow and provenance (Milestone B08)
+
+Delivered Milestone B08: generated Pandas cleaning workflow with column lineage and provenance tracking, isolated execution in gVisor, run-scoped immutable artifacts, and analysis run lifecycle orchestration.
+- Built and pinned dedicated transformer container (`sandbox/transformer/Dockerfile`) with pandas==2.2.3 on python:3.13-slim.
+- Implemented in-container binary framing protocol (`transform_data.py`), Linux broker (`scripts/sandbox-transform.py`), and host execution boundary (`run_isolated_transform`).
+- Implemented deterministic cleaning plan and Pandas code generator (`cleaning_generator.py`) with AST safety validation.
+- Created analysis run orchestration (`POST /projects/{project_id}/runs`, stage progression `clean_dataset`), and run-scoped immutable artifact store (`Artifact` model, SHA-256 integrity verification, owner-isolated retrieval and download).
+- Fixed Windows telemetry hook path issue and resolved circular dependency in API artifacts module.
+
+Validation:
+- `npm run test:postgres`: 114 passed (0 failures, 0 skips).
+- `npm run check`: 4 JS tests, 69 Python tests passed (45 PG skipped), lint, format, type check, contracts, and builds passed cleanly.
+- Real gVisor acceptance suite (`test-transformer.py`): passed on `samples/synthetic-sales-messy.csv` (245 rows -> 240 rows, 5 duplicates dropped, whitespace stripped), verified safe rejection of failing scripts and invalid return types.
+- Unit suite `test_cleaning.py`: AST validation, safe identifier normalization, and serialization passed.
+Authorized milestone commit/push follows. Next: B09 Baseline evaluation.

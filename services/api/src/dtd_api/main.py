@@ -79,6 +79,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     async def database_error(request: Request, _: SQLAlchemyError) -> JSONResponse:
         return error_response(request, 503, "DATABASE_UNAVAILABLE", "The database is unavailable.")
 
+    from dtd_api.artifacts import router as artifact_router
     from dtd_api.auth import router as auth_router
     from dtd_api.inspections import router as inspection_router
     from dtd_api.profiles import router as profile_router
@@ -92,6 +93,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.include_router(upload_router)
     app.include_router(inspection_router)
     app.include_router(profile_router)
+    app.include_router(artifact_router)
 
     @app.get("/", include_in_schema=False)
     def workspace() -> FileResponse:
