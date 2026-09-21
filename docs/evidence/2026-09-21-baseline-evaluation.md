@@ -31,4 +31,5 @@ The goal of Milestone B09 was to implement a secure, deterministic baseline mode
 - `npm run check` passes, guaranteeing rigorous type consistency and deterministic linting.
 
 ## Next Steps
+
 Proceeding to B10 (Analysis rendering & layout).

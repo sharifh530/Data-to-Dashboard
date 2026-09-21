@@ -119,3 +119,20 @@ Validation:
 - Real gVisor acceptance suite (`test-transformer.py`): passed on `samples/synthetic-sales-messy.csv` (245 rows -> 240 rows, 5 duplicates dropped, whitespace stripped), verified safe rejection of failing scripts and invalid return types.
 - Unit suite `test_cleaning.py`: AST validation, safe identifier normalization, and serialization passed.
   Authorized milestone commit/push follows. Next: B09 Baseline evaluation.
+
+## 2026-09-21 — Baseline evaluation in gVisor sandbox (Milestone B09)
+
+Delivered Milestone B09: deterministic baseline evaluation workflow generation, strict feature selection, train/test splitting before fitting preprocessing to prevent data leakage, isolated execution in gVisor, and run-scoped evaluation reports.
+
+- Implemented baseline contracts (`baseline_contracts.py`) defining `BaselineReport`, `ModelMetrics`, `SplitInfo`, and `FeatureInfo`.
+- Implemented deterministic baseline workflow generator (`baseline_generator.py`) supporting both `regression` and `classification` tasks, automatic identifier/leakage column exclusion, target class balance validation (minimum 10 rows per class, 2-20 classes), `train_test_split` (80/20, seed 42) before any preprocessing fitting (`StandardScaler`, `OneHotEncoder`), and fitting a reference dummy model against a candidate model (`Ridge` for regression, `LogisticRegression` for classification).
+- Implemented `run_baseline` execution handler in sandbox transformer (`sandbox/transformer/transform_data.py`), safely compiling and executing generated baseline scripts in an isolated namespace containing only `pd` and `np`, with NUL byte detection, size limits, and SHA-256 validation. Rebuilt and pinned transformer image.
+- Updated `run_engine.py` to orchestrate `train_baseline` stage, retrieving the `cleaned.csv` artifact from the prior `clean_dataset` stage and saving the baseline evaluation report to run checkpoint and artifact storage.
+- Added support for `target_column` and `task_type` in `AnalysisRunCreate` contract and run creation endpoint (`runs.py`).
+
+Validation:
+- `tests/python/test_baseline.py`: 5 unit tests covering classification, regression, feature exclusion, and skip conditions passed.
+- `tests/python/test_runs.py`: lifecycle and artifact tests updated and passed.
+- `scripts/test-transformer.py`: end-to-end gVisor acceptance test passed in isolated container (Dummy MAE: 228.24 vs Ridge MAE: 73.47; verified script failure and invalid return type rejections).
+- `npm run check`: lint, format, typecheck (mypy), protocol tests, 74 Python tests passed cleanly.
+- Milestone committed (`78c8e7b`) and pushed to remote `main`. Next: B10 Analysis rendering & layout.

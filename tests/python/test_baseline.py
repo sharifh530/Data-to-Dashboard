@@ -120,7 +120,8 @@ def test_generate_baseline_classification(mock_profile_report):
         clean_columns=clean_columns,
     )
 
-    assert len(features) == 6  # target_cls is excluded from feature list entirely
+    # target_cls is excluded from feature list entirely
+    assert len(features) == 6
 
     # Check exclusions
     excluded = [f.name for f in features if f.role == "excluded"]
