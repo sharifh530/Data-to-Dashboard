@@ -105,6 +105,7 @@ Validation: 109 PostgreSQL-backed tests passed; npm run check passed 4 JS tests,
 ## 2026-09-21 — Generated Pandas cleaning workflow and provenance (Milestone B08)
 
 Delivered Milestone B08: generated Pandas cleaning workflow with column lineage and provenance tracking, isolated execution in gVisor, run-scoped immutable artifacts, and analysis run lifecycle orchestration.
+
 - Built and pinned dedicated transformer container (`sandbox/transformer/Dockerfile`) with pandas==2.2.3 on python:3.13-slim.
 - Implemented in-container binary framing protocol (`transform_data.py`), Linux broker (`scripts/sandbox-transform.py`), and host execution boundary (`run_isolated_transform`).
 - Implemented deterministic cleaning plan and Pandas code generator (`cleaning_generator.py`) with AST safety validation.
@@ -112,8 +113,9 @@ Delivered Milestone B08: generated Pandas cleaning workflow with column lineage 
 - Fixed Windows telemetry hook path issue and resolved circular dependency in API artifacts module.
 
 Validation:
+
 - `npm run test:postgres`: 114 passed (0 failures, 0 skips).
 - `npm run check`: 4 JS tests, 69 Python tests passed (45 PG skipped), lint, format, type check, contracts, and builds passed cleanly.
 - Real gVisor acceptance suite (`test-transformer.py`): passed on `samples/synthetic-sales-messy.csv` (245 rows -> 240 rows, 5 duplicates dropped, whitespace stripped), verified safe rejection of failing scripts and invalid return types.
 - Unit suite `test_cleaning.py`: AST validation, safe identifier normalization, and serialization passed.
-Authorized milestone commit/push follows. Next: B09 Baseline evaluation.
+  Authorized milestone commit/push follows. Next: B09 Baseline evaluation.

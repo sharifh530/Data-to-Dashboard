@@ -10,5 +10,6 @@ Executed evidence:
 - Unit suite `tests/python/test_cleaning.py`: AST validation, safe identifier normalization, and serialization tests passed.
 
 Limitations & Next:
+
 - Analysis runs currently implement stage `clean_dataset`; subsequent stages (`select_features`, `train_baseline`, `evaluate_baseline`, `generate_dashboard`) remain queued for milestones B09–B11.
 - Code generation uses deterministic AST-validated heuristics derived from profile metadata. LLM provider integration with bounded token budgets is planned for later iterations.

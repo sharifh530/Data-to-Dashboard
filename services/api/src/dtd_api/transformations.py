@@ -62,8 +62,8 @@ def run_isolated_transform(
     if report_len > MAX_REPORT_JSON or len(stdout) < 4 + report_len:
         raise RuntimeError("Invalid report payload returned from transformer")
 
-    report_json = stdout[4 : 4 + report_len].decode("utf-8")
-    cleaned_csv_bytes = stdout[4 + report_len :]
+    report_json = stdout[4: 4 + report_len].decode("utf-8")
+    cleaned_csv_bytes = stdout[4 + report_len:]
 
     if len(cleaned_csv_bytes) > MAX_CLEANED_CSV:
         raise RuntimeError("Cleaned output exceeded size budget")

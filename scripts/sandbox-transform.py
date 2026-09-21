@@ -19,8 +19,10 @@ MAX_TRANSFORM_OUTPUT = 16 * 1024 * 1024  # 15 MiB cleaned CSV + report
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Broker for isolated dataset transformation")
-    parser.add_argument("--image", required=True, help="Pinned Docker image ID")
+    parser = argparse.ArgumentParser(
+        description="Broker for isolated dataset transformation")
+    parser.add_argument("--image", required=True,
+                        help="Pinned Docker image ID")
     args = parser.parse_args()
 
     policy = ProbePolicy(args.image)
@@ -85,7 +87,8 @@ def main() -> None:
         if process.returncode or overflow.is_set() or reader.is_alive() or writer.is_alive():
             raise RuntimeError("Transformation failed or budget exceeded")
     finally:
-        subprocess.run(["docker", "rm", "--force", name], capture_output=True, timeout=10)
+        subprocess.run(["docker", "rm", "--force", name],
+                       capture_output=True, timeout=10)
         remaining = subprocess.run(
             ["docker", "ps", "-aq", "--filter", f"name=^/{name}$"],
             capture_output=True,

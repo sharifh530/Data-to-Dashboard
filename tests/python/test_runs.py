@@ -41,7 +41,8 @@ def setup_run(client, engine):
 
 def expire(engine):
     with Session(engine) as db, db.begin():
-        db.execute(update(WorkItem).values(lease_expires_at=now() - timedelta(seconds=1)))
+        db.execute(update(WorkItem).values(
+            lease_expires_at=now() - timedelta(seconds=1)))
 
 
 def test_submission_execution_replay_and_ownership(db_engine):
@@ -56,21 +57,26 @@ def test_submission_execution_replay_and_ownership(db_engine):
             f"/projects/{project}/runs",
         ):
             assert other.get("/api/v1" + path).status_code == 404
-        assert other.post(f"/api/v1/runs/{run_id}/cancel", headers=other_headers).status_code == 404
+        assert other.post(
+            f"/api/v1/runs/{run_id}/cancel", headers=other_headers).status_code == 404
         assert client.post(f"/api/v1/runs/{run_id}/cancel").status_code == 403
         with Session(db_engine) as db, db.begin():
             assert db.scalar(select(func.count()).select_from(Outbox)) == 1
-            db.add(Outbox(project_id=project, topic="run.requested", payload={"run_id": run_id}))
+            db.add(Outbox(project_id=project, topic="run.requested",
+                   payload={"run_id": run_id}))
         for _ in range(4):
             work_once(db_engine)
         result = client.get(f"/api/v1/runs/{run_id}").json()
         assert result["status"] == "succeeded"
         assert result["completed_stages"] == list(STAGES)
-        assert result["result"] == {"revenue": 27200, "orders": 176, "mode": "synthetic"}
-        assert len(client.get(f"/api/v1/projects/{project}/runs").json()["items"]) == 1
+        assert result["result"] == {
+            "revenue": 27200, "orders": 176, "mode": "synthetic"}
+        assert len(client.get(
+            f"/api/v1/projects/{project}/runs").json()["items"]) == 1
         response = client.get(f"/api/v1/runs/{run_id}/events?follow=false")
         assert response.status_code == 200
-        ids = [int(line[4:]) for line in response.text.splitlines() if line.startswith("id: ")]
+        ids = [int(line[4:]) for line in response.text.splitlines()
+               if line.startswith("id: ")]
         assert ids == list(range(1, result["event_sequence"] + 1))
         replay = client.get(
             f"/api/v1/runs/{run_id}/events?follow=false", headers={"Last-Event-ID": "2"}
@@ -83,15 +89,19 @@ def test_submission_execution_replay_and_ownership(db_engine):
             == 409
         )
         assert (
-            client.get(f"/api/v1/runs/{run_id}/events", headers={"Last-Event-ID": "-1"}).status_code
+            client.get(f"/api/v1/runs/{run_id}/events",
+                       headers={"Last-Event-ID": "-1"}).status_code
             == 422
         )
         with Session(db_engine) as db, db.begin():
-            db.execute(delete(RunEvent).where(RunEvent.run_id == run_id, RunEvent.sequence <= 2))
-        assert "event: snapshot" in client.get(f"/api/v1/runs/{run_id}/events?follow=false").text
+            db.execute(delete(RunEvent).where(
+                RunEvent.run_id == run_id, RunEvent.sequence <= 2))
+        assert "event: snapshot" in client.get(
+            f"/api/v1/runs/{run_id}/events?follow=false").text
         token = client.cookies.get("__Host-dtd_session")
         owner = client.get("/api/v1/auth/session").json()["user_id"]
-        assert client.post("/api/v1/auth/logout", headers=headers).status_code == 204
+        assert client.post("/api/v1/auth/logout",
+                           headers=headers).status_code == 204
         with pytest.raises(ApiError):
             event_batch(db_engine, run_id, owner, token, 0)
 
@@ -113,7 +123,8 @@ def test_recovery_fences_old_worker_and_preserves_checkpoint(db_engine):
         assert not complete(db_engine, stale, fixture_result(stale.stage))
         assert complete(db_engine, recovered, fixture_result(recovered.stage))
         work_once(db_engine)
-        assert client.get(f"/api/v1/runs/{run_id}").json()["status"] == "succeeded"
+        assert client.get(
+            f"/api/v1/runs/{run_id}").json()["status"] == "succeeded"
 
 
 @pytest.mark.parametrize("active", [False, True])
@@ -124,8 +135,10 @@ def test_cancellation_cannot_publish(db_engine, active):
         if active:
             dispatch_one(db_engine)
             claim = claim_one(db_engine)
-        response = client.post(f"/api/v1/runs/{run_id}/cancel", headers=headers)
-        assert response.json()["status"] == ("cancelling" if active else "cancelled")
+        response = client.post(
+            f"/api/v1/runs/{run_id}/cancel", headers=headers)
+        assert response.json()["status"] == (
+            "cancelling" if active else "cancelled")
         if claim:
             assert not complete(db_engine, claim, fixture_result(claim.stage))
         work_once(db_engine)
@@ -135,7 +148,8 @@ def test_cancellation_cannot_publish(db_engine, active):
 
 @pytest.mark.parametrize(
     "reason",
-    ["retry", "deadline", "config", "output", "project", "dataset", "owner", "cancel-crash"],
+    ["retry", "deadline", "config", "output",
+        "project", "dataset", "owner", "cancel-crash"],
 )
 def test_bounded_failure_and_publication_guards(db_engine, reason):
     with client_for(db_engine) as client:
@@ -160,7 +174,8 @@ def test_bounded_failure_and_publication_guards(db_engine, reason):
         else:
             with Session(db_engine) as db, db.begin():
                 if reason == "deadline":
-                    db.execute(update(Run).values(started_at=now() - timedelta(seconds=601)))
+                    db.execute(update(Run).values(
+                        started_at=now() - timedelta(seconds=601)))
                 if reason == "project":
                     db.execute(update(Project).values(deleted_at=now()))
                 if reason == "dataset":
@@ -183,11 +198,13 @@ def test_postgres_concurrent_claims_and_admission(postgres_engine):
     with client_for(postgres_engine) as client:
         headers, project, run_id = setup_run(client, postgres_engine)
         with ThreadPoolExecutor(max_workers=2) as pool:
-            responses = list(pool.map(lambda _: submit(client, headers, project), range(2)))
+            responses = list(pool.map(lambda _: submit(
+                client, headers, project), range(2)))
         assert all(response.json()["id"] == run_id for response in responses)
         dispatch_one(postgres_engine)
         with ThreadPoolExecutor(max_workers=2) as pool:
-            claims = list(pool.map(lambda _: claim_one(postgres_engine), range(2)))
+            claims = list(
+                pool.map(lambda _: claim_one(postgres_engine), range(2)))
         assert sum(claim is not None for claim in claims) == 1
 
 
@@ -198,14 +215,17 @@ def test_postgres_cancel_publication_race(postgres_engine):
         work_once(postgres_engine)
         claim = claim_one(postgres_engine)
         with ThreadPoolExecutor(max_workers=2) as pool:
-            publish = pool.submit(complete, postgres_engine, claim, fixture_result(claim.stage))
-            cancel = pool.submit(client.post, f"/api/v1/runs/{run_id}/cancel", headers=headers)
+            publish = pool.submit(complete, postgres_engine,
+                                  claim, fixture_result(claim.stage))
+            cancel = pool.submit(
+                client.post, f"/api/v1/runs/{run_id}/cancel", headers=headers)
             assert cancel.result().status_code == 200
             published = publish.result()
         result = client.get(f"/api/v1/runs/{run_id}").json()
         assert result["status"] == ("succeeded" if published else "cancelled")
         assert (result["result"] is not None) == published
-        assert not complete(postgres_engine, claim, fixture_result(claim.stage))
+        assert not complete(postgres_engine, claim,
+                            fixture_result(claim.stage))
 
 
 def test_postgres_worker_process_restart(postgres_engine):
@@ -213,8 +233,10 @@ def test_postgres_worker_process_restart(postgres_engine):
         _, _, run_id = setup_run(client, postgres_engine)
         with postgres_engine.connect() as connection:
             schema = connection.scalar(text("SELECT current_schema()"))
-        url = postgres_engine.url.update_query_dict({"options": f"-csearch_path={schema}"})
-        env = {**os.environ, "DTD_PROCESS_TEST_URL": url.render_as_string(hide_password=False)}
+        url = postgres_engine.url.update_query_dict(
+            {"options": f"-csearch_path={schema}"})
+        env = {**os.environ,
+               "DTD_PROCESS_TEST_URL": url.render_as_string(hide_password=False)}
         code = (
             "import os,json; from dataclasses import asdict; "
             "from dtd_api.database import make_engine; "
@@ -232,9 +254,11 @@ def test_postgres_worker_process_restart(postgres_engine):
         recovered = claim_one(postgres_engine)
         assert recovered.stage == STAGES[1]
         assert recovered.token != abandoned["token"]
-        assert complete(postgres_engine, recovered, fixture_result(recovered.stage))
+        assert complete(postgres_engine, recovered,
+                        fixture_result(recovered.stage))
         work_once(postgres_engine)
-        assert client.get(f"/api/v1/runs/{run_id}").json()["status"] == "succeeded"
+        assert client.get(
+            f"/api/v1/runs/{run_id}").json()["status"] == "succeeded"
 
 
 def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
@@ -270,7 +294,8 @@ def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
         )
         return report, fake_csv
 
-    monkeypatch.setattr("dtd_api.run_engine.run_isolated_transform", fake_transform)
+    monkeypatch.setattr(
+        "dtd_api.run_engine.run_isolated_transform", fake_transform)
 
     with client_for(db_engine) as client, client_for(db_engine) as bob:
         headers, project, dataset = setup(client, db_engine)

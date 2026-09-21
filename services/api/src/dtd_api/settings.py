@@ -6,7 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="DTD_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="DTD_", env_file=".env", extra="ignore")
     environment: str = "local"
     database_url: SecretStr | None = None
     app_origin: str = "http://127.0.0.1:8000"
@@ -19,20 +20,24 @@ class Settings(BaseSettings):
             import re
 
             if not re.fullmatch(r"sha256:[a-f0-9]{64}", self.inspection_image):
-                raise ValueError("Inspection image must be a pinned local image ID")
+                raise ValueError(
+                    "Inspection image must be a pinned local image ID")
         if self.transformer_image:
             import re
 
             if not re.fullmatch(r"sha256:[a-f0-9]{64}", self.transformer_image):
-                raise ValueError("Transformer image must be a pinned local image ID")
+                raise ValueError(
+                    "Transformer image must be a pinned local image ID")
         value = urlsplit(self.app_origin)
         if value.scheme not in {"http", "https"} or value.hostname not in {
             "localhost",
             "127.0.0.1",
         }:
-            raise ValueError("Local authentication requires a loopback application origin")
+            raise ValueError(
+                "Local authentication requires a loopback application origin")
         if value.path or value.query or value.fragment or value.username or value.password:
-            raise ValueError("Application origin must contain only scheme, host, and optional port")
+            raise ValueError(
+                "Application origin must contain only scheme, host, and optional port")
         return self
 
 

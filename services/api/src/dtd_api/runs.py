@@ -76,7 +76,8 @@ def view(run: Run) -> RunView:
         event_sequence=run.event_sequence,
         completed_stages=list(run.checkpoint),
         result=run.result,
-        dataset_version_id=UUID(run.dataset_version_id) if run.dataset_version_id else None,
+        dataset_version_id=UUID(
+            run.dataset_version_id) if run.dataset_version_id else None,
     )
 
 
@@ -111,7 +112,8 @@ def create_demo(
     idempotency_key: KEY,
 ) -> RunView:
     owned(db, str(project_id), principal.user.id)
-    db.execute(select(User).where(User.id == principal.user.id).with_for_update()).scalar_one()
+    db.execute(select(User).where(
+        User.id == principal.user.id).with_for_update()).scalar_one()
     route = f"POST /projects/{project_id}/demo-runs"
     db.execute(
         delete(IdempotencyRecord).where(
@@ -122,10 +124,12 @@ def create_demo(
         )
     )
     fingerprint = digest(json.dumps(body.model_dump(), sort_keys=True))
-    replay = db.get(IdempotencyRecord, (principal.user.id, route, idempotency_key))
+    replay = db.get(IdempotencyRecord,
+                    (principal.user.id, route, idempotency_key))
     if replay:
         if replay.request_hash != fingerprint:
-            raise ApiError(409, "IDEMPOTENCY_CONFLICT", "Key belongs to a different request.")
+            raise ApiError(409, "IDEMPOTENCY_CONFLICT",
+                           "Key belongs to a different request.")
         return view(owned_run(db, replay.resource_id, principal.user.id))
     active = db.scalar(
         select(Run.id)
@@ -160,7 +164,8 @@ def create_demo(
     db.add(run)
     db.flush()
     emit(db, run, "run_queued", {"mode": "synthetic", "fixture": body.fixture})
-    db.add(Outbox(project_id=run.project_id, topic="run.requested", payload={"run_id": run.id}))
+    db.add(Outbox(project_id=run.project_id,
+           topic="run.requested", payload={"run_id": run.id}))
     db.add(
         IdempotencyRecord(
             owner_id=principal.user.id,
@@ -193,7 +198,8 @@ def create_analysis_run(
     idempotency_key: KEY,
 ) -> RunView:
     owned(db, str(project_id), principal.user.id)
-    db.execute(select(User).where(User.id == principal.user.id).with_for_update()).scalar_one()
+    db.execute(select(User).where(
+        User.id == principal.user.id).with_for_update()).scalar_one()
     route = f"POST /projects/{project_id}/runs"
     db.execute(
         delete(IdempotencyRecord).where(
@@ -203,11 +209,14 @@ def create_analysis_run(
             IdempotencyRecord.expires_at <= now(),
         )
     )
-    fingerprint = digest(json.dumps(body.model_dump(mode="json"), sort_keys=True))
-    replay = db.get(IdempotencyRecord, (principal.user.id, route, idempotency_key))
+    fingerprint = digest(json.dumps(
+        body.model_dump(mode="json"), sort_keys=True))
+    replay = db.get(IdempotencyRecord,
+                    (principal.user.id, route, idempotency_key))
     if replay:
         if replay.request_hash != fingerprint:
-            raise ApiError(409, "IDEMPOTENCY_CONFLICT", "Key belongs to a different request.")
+            raise ApiError(409, "IDEMPOTENCY_CONFLICT",
+                           "Key belongs to a different request.")
         return view(owned_run(db, replay.resource_id, principal.user.id))
     active = db.scalar(
         select(Run.id)
@@ -223,7 +232,8 @@ def create_analysis_run(
     version_id = str(body.dataset_version_id)
     version = db.scalar(
         select(DatasetVersion).where(
-            DatasetVersion.id == version_id, DatasetVersion.project_id == str(project_id)
+            DatasetVersion.id == version_id, DatasetVersion.project_id == str(
+                project_id)
         )
     )
     if version is None:
@@ -233,7 +243,8 @@ def create_analysis_run(
 
     profile = db.get(Profile, version_id)
     if profile is None or profile.status != "ready":
-        raise ApiError(409, "PROFILE_REQUIRED", "Dataset version must be profiled before analysis.")
+        raise ApiError(409, "PROFILE_REQUIRED",
+                       "Dataset version must be profiled before analysis.")
 
     run = Run(
         project_id=str(project_id),
@@ -242,8 +253,10 @@ def create_analysis_run(
     )
     db.add(run)
     db.flush()
-    emit(db, run, "run_queued", {"mode": "analysis", "dataset_version_id": version.id})
-    db.add(Outbox(project_id=run.project_id, topic="run.requested", payload={"run_id": run.id}))
+    emit(db, run, "run_queued", {
+         "mode": "analysis", "dataset_version_id": version.id})
+    db.add(Outbox(project_id=run.project_id,
+           topic="run.requested", payload={"run_id": run.id}))
     db.add(
         IdempotencyRecord(
             owner_id=principal.user.id,
@@ -338,10 +351,12 @@ def event_batch(
             )
         )
         if not valid:
-            raise ApiError(401, "UNAUTHENTICATED", "Session expired or revoked.")
+            raise ApiError(401, "UNAUTHENTICATED",
+                           "Session expired or revoked.")
         run = owned_run(db, run_id, owner_id)
         if cursor > run.event_sequence:
-            raise ApiError(409, "INVALID_CURSOR", "Event cursor is ahead of this run.")
+            raise ApiError(409, "INVALID_CURSOR",
+                           "Event cursor is ahead of this run.")
         rows = list(
             db.scalars(
                 select(RunEvent)
@@ -379,7 +394,8 @@ def event_batch(
 @router.get(
     "/runs/{run_id}/events",
     response_class=StreamingResponse,
-    responses={200: {"content": {"text/event-stream": {"schema": {"type": "string"}}}}},
+    responses={
+        200: {"content": {"text/event-stream": {"schema": {"type": "string"}}}}},
 )
 async def events(
     run_id: UUID,

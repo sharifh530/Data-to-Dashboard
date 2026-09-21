@@ -47,7 +47,8 @@ def run_transformation(
         try:
             text = raw_data.decode("utf-8-sig")
         except UnicodeDecodeError as exc:
-            raise TransformError("UTF8_REQUIRED", "CSV must be valid UTF-8") from exc
+            raise TransformError(
+                "UTF8_REQUIRED", "CSV must be valid UTF-8") from exc
         if "\x00" in text:
             raise TransformError("NUL_BYTE", "NUL bytes are forbidden")
         delim = delimiter or ","
@@ -62,17 +63,21 @@ def run_transformation(
         try:
             conn.execute("PRAGMA query_only=ON")
             if not table_name:
-                raise TransformError("MISSING_TABLE_NAME", "Table name required for SQLite")
+                raise TransformError("MISSING_TABLE_NAME",
+                                     "Table name required for SQLite")
             quoted_table = '"' + table_name.replace('"', '""') + '"'
-            df = pd.read_sql_query(f"SELECT * FROM {quoted_table}", conn, dtype=str)
+            df = pd.read_sql_query(
+                f"SELECT * FROM {quoted_table}", conn, dtype=str)
         finally:
             conn.close()
     else:
-        raise TransformError("UNSUPPORTED_FORMAT", f"Format {file_format} is not supported")
+        raise TransformError("UNSUPPORTED_FORMAT",
+                             f"Format {file_format} is not supported")
 
     original_rows, original_cols = df.shape
     if original_rows > 100000 or original_cols > 64:
-        raise TransformError("DATA_LIMITS_EXCEEDED", "Input exceeds row or column limits")
+        raise TransformError("DATA_LIMITS_EXCEEDED",
+                             "Input exceeds row or column limits")
 
     orig_columns = list(df.columns)
     orig_nulls = {str(c): int(df[c].isna().sum()) for c in orig_columns}
@@ -85,7 +90,8 @@ def run_transformation(
         exec(compiled, namespace)  # noqa: S102
         clean_fn = namespace.get("clean_dataset")
         if not callable(clean_fn):
-            raise TransformError("MISSING_CLEAN_FUNCTION", "clean_dataset function not found")
+            raise TransformError("MISSING_CLEAN_FUNCTION",
+                                 "clean_dataset function not found")
         cleaned_df, report_meta = clean_fn(df)
     except Exception as exc:
         raise TransformError("SCRIPT_EXECUTION_FAILED", str(exc)) from exc
@@ -97,7 +103,8 @@ def run_transformation(
 
     cleaned_rows, cleaned_cols = cleaned_df.shape
     if len(cleaned_df) > 100000 or cleaned_cols > 64:
-        raise TransformError("OUTPUT_LIMITS_EXCEEDED", "Cleaned output exceeds allowed dimensions")
+        raise TransformError("OUTPUT_LIMITS_EXCEEDED",
+                             "Cleaned output exceeds allowed dimensions")
 
     # 3. Build Column Lineage
     lineage = []
@@ -121,7 +128,8 @@ def run_transformation(
     cleaned_csv_bytes = csv_buffer.getvalue().encode("utf-8")
 
     if len(cleaned_csv_bytes) > MAX_CLEANED_OUTPUT:
-        raise TransformError("OUTPUT_SIZE_EXCEEDED", "Cleaned CSV exceeds maximum byte budget")
+        raise TransformError("OUTPUT_SIZE_EXCEEDED",
+                             "Cleaned CSV exceeds maximum byte budget")
 
     output_sha = hashlib.sha256(cleaned_csv_bytes).hexdigest()
 
@@ -184,7 +192,8 @@ def main() -> None:
             "error": "INPUT_SIZE_LIMIT",
         }
         report_bytes = json.dumps(report).encode("utf-8")
-        sys.stdout.buffer.write(struct.pack(">I", len(report_bytes)) + report_bytes)
+        sys.stdout.buffer.write(struct.pack(
+            ">I", len(report_bytes)) + report_bytes)
         return
 
     try:

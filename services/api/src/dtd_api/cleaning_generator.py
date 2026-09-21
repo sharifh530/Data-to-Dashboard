@@ -80,7 +80,11 @@ def generate_cleaning_workflow(
         CleaningOperation(
             operation_type="trim_whitespace",
             description="Strip leading and trailing whitespace from text fields.",
-            target_columns=[rename_mapping[c.name] for c in columns if c.nonnumeric_count > 0],
+            target_columns=[
+                rename_mapping[c.name]
+                for c in columns
+                if c.nonnumeric_count > 0
+            ],
             details={},
         )
     )
