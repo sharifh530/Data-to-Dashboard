@@ -47,8 +47,7 @@ def run_transformation(
         try:
             text = raw_data.decode("utf-8-sig")
         except UnicodeDecodeError as exc:
-            raise TransformError(
-                "UTF8_REQUIRED", "CSV must be valid UTF-8") from exc
+            raise TransformError("UTF8_REQUIRED", "CSV must be valid UTF-8") from exc
         if "\x00" in text:
             raise TransformError("NUL_BYTE", "NUL bytes are forbidden")
         delim = delimiter or ","
@@ -63,21 +62,17 @@ def run_transformation(
         try:
             conn.execute("PRAGMA query_only=ON")
             if not table_name:
-                raise TransformError("MISSING_TABLE_NAME",
-                                     "Table name required for SQLite")
+                raise TransformError("MISSING_TABLE_NAME", "Table name required for SQLite")
             quoted_table = '"' + table_name.replace('"', '""') + '"'
-            df = pd.read_sql_query(
-                f"SELECT * FROM {quoted_table}", conn, dtype=str)
+            df = pd.read_sql_query(f"SELECT * FROM {quoted_table}", conn, dtype=str)
         finally:
             conn.close()
     else:
-        raise TransformError("UNSUPPORTED_FORMAT",
-                             f"Format {file_format} is not supported")
+        raise TransformError("UNSUPPORTED_FORMAT", f"Format {file_format} is not supported")
 
     original_rows, original_cols = df.shape
     if original_rows > 100000 or original_cols > 64:
-        raise TransformError("DATA_LIMITS_EXCEEDED",
-                             "Input exceeds row or column limits")
+        raise TransformError("DATA_LIMITS_EXCEEDED", "Input exceeds row or column limits")
 
     orig_columns = list(df.columns)
     orig_nulls = {str(c): int(df[c].isna().sum()) for c in orig_columns}
@@ -90,8 +85,7 @@ def run_transformation(
         exec(compiled, namespace)  # noqa: S102
         clean_fn = namespace.get("clean_dataset")
         if not callable(clean_fn):
-            raise TransformError("MISSING_CLEAN_FUNCTION",
-                                 "clean_dataset function not found")
+            raise TransformError("MISSING_CLEAN_FUNCTION", "clean_dataset function not found")
         cleaned_df, report_meta = clean_fn(df)
     except Exception as exc:
         raise TransformError("SCRIPT_EXECUTION_FAILED", str(exc)) from exc
@@ -103,8 +97,7 @@ def run_transformation(
 
     cleaned_rows, cleaned_cols = cleaned_df.shape
     if len(cleaned_df) > 100000 or cleaned_cols > 64:
-        raise TransformError("OUTPUT_LIMITS_EXCEEDED",
-                             "Cleaned output exceeds allowed dimensions")
+        raise TransformError("OUTPUT_LIMITS_EXCEEDED", "Cleaned output exceeds allowed dimensions")
 
     # 3. Build Column Lineage
     lineage = []
@@ -128,8 +121,7 @@ def run_transformation(
     cleaned_csv_bytes = csv_buffer.getvalue().encode("utf-8")
 
     if len(cleaned_csv_bytes) > MAX_CLEANED_OUTPUT:
-        raise TransformError("OUTPUT_SIZE_EXCEEDED",
-                             "Cleaned CSV exceeds maximum byte budget")
+        raise TransformError("OUTPUT_SIZE_EXCEEDED", "Cleaned CSV exceeds maximum byte budget")
 
     output_sha = hashlib.sha256(cleaned_csv_bytes).hexdigest()
 
@@ -157,6 +149,45 @@ def run_transformation(
     return report, cleaned_csv_bytes
 
 
+def run_baseline(csv_data: bytes, script: str) -> dict[str, Any]:
+    import numpy as np
+    import pandas as pd
+
+    try:
+        text = csv_data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise TransformError("UTF8_REQUIRED", "CSV must be valid UTF-8") from exc
+
+    if "\x00" in text:
+        raise TransformError("NUL_BYTE", "NUL bytes are forbidden")
+
+    df = pd.read_csv(io.StringIO(text), dtype=str)
+    original_rows, original_cols = df.shape
+    if original_rows > 100000 or original_cols > 64:
+        raise TransformError("DATA_LIMITS_EXCEEDED", "Input exceeds row or column limits")
+
+    namespace: dict[str, Any] = {"pd": pd, "np": np}
+
+    try:
+        compiled = compile(script, "<generated_baseline>", "exec")
+        exec(compiled, namespace)  # noqa: S102
+        train_fn = namespace.get("train_baseline")
+        if not callable(train_fn):
+            raise TransformError("MISSING_BASELINE_FUNCTION", "train_baseline function not found")
+        report = train_fn(df)
+    except Exception as exc:
+        raise TransformError("SCRIPT_EXECUTION_FAILED", str(exc)) from exc
+
+    if not isinstance(report, dict):
+        raise TransformError("INVALID_SCRIPT_OUTPUT", "train_baseline must return a dictionary")
+
+    report["input_sha256"] = hashlib.sha256(csv_data).hexdigest()
+    if "schema_version" not in report:
+        report["schema_version"] = "1"
+
+    return report
+
+
 def main() -> None:
     stdin_buffer = sys.stdin.buffer
 
@@ -177,57 +208,52 @@ def main() -> None:
     delimiter = meta.get("delimiter")
     table_name = meta.get("table")
     script = meta.get("script", "")
+    mode = meta.get("mode", "transform")
 
     raw_data = stdin_buffer.read(MAX_INPUT + 1)
     if not raw_data or len(raw_data) > MAX_INPUT:
         report = {
             "schema_version": "1",
             "status": "rejected",
-            "input_sha256": hashlib.sha256(raw_data).hexdigest(),
-            "output_sha256": None,
-            "summary": None,
-            "operations": [],
-            "lineage": [],
-            "warnings": [],
+            "input_sha256": hashlib.sha256(raw_data).hexdigest() if raw_data else None,
             "error": "INPUT_SIZE_LIMIT",
         }
         report_bytes = json.dumps(report).encode("utf-8")
-        sys.stdout.buffer.write(struct.pack(
-            ">I", len(report_bytes)) + report_bytes)
+        sys.stdout.buffer.write(struct.pack(">I", len(report_bytes)) + report_bytes)
         return
 
     try:
-        report, cleaned_csv_bytes = run_transformation(
-            raw_data=raw_data,
-            file_format=file_format,
-            delimiter=delimiter,
-            table_name=table_name,
-            script=script,
-        )
+        if mode == "baseline":
+            report = run_baseline(csv_data=raw_data, script=script)
+            cleaned_csv_bytes = b""
+        else:
+            report, cleaned_csv_bytes = run_transformation(
+                raw_data=raw_data,
+                file_format=file_format,
+                delimiter=delimiter,
+                table_name=table_name,
+                script=script,
+            )
     except TransformError as err:
         report = {
             "schema_version": "1",
             "status": "rejected",
             "input_sha256": hashlib.sha256(raw_data).hexdigest(),
-            "output_sha256": None,
-            "summary": None,
-            "operations": [],
-            "lineage": [],
             "warnings": [str(err)[:100]] if str(err) else [],
             "error": err.code,
         }
         cleaned_csv_bytes = b""
-    except Exception:
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc(file=sys.stderr)
         report = {
             "schema_version": "1",
             "status": "failed",
             "input_sha256": hashlib.sha256(raw_data).hexdigest(),
-            "output_sha256": None,
-            "summary": None,
-            "operations": [],
-            "lineage": [],
             "warnings": [],
             "error": "UNEXPECTED_TRANSFORM_ERROR",
+            "skip_reason": str(e),
         }
         cleaned_csv_bytes = b""
 

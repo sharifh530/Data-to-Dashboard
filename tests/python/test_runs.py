@@ -41,8 +41,7 @@ def setup_run(client, engine):
 
 def expire(engine):
     with Session(engine) as db, db.begin():
-        db.execute(update(WorkItem).values(
-            lease_expires_at=now() - timedelta(seconds=1)))
+        db.execute(update(WorkItem).values(lease_expires_at=now() - timedelta(seconds=1)))
 
 
 def test_submission_execution_replay_and_ownership(db_engine):
@@ -57,26 +56,21 @@ def test_submission_execution_replay_and_ownership(db_engine):
             f"/projects/{project}/runs",
         ):
             assert other.get("/api/v1" + path).status_code == 404
-        assert other.post(
-            f"/api/v1/runs/{run_id}/cancel", headers=other_headers).status_code == 404
+        assert other.post(f"/api/v1/runs/{run_id}/cancel", headers=other_headers).status_code == 404
         assert client.post(f"/api/v1/runs/{run_id}/cancel").status_code == 403
         with Session(db_engine) as db, db.begin():
             assert db.scalar(select(func.count()).select_from(Outbox)) == 1
-            db.add(Outbox(project_id=project, topic="run.requested",
-                   payload={"run_id": run_id}))
+            db.add(Outbox(project_id=project, topic="run.requested", payload={"run_id": run_id}))
         for _ in range(4):
             work_once(db_engine)
         result = client.get(f"/api/v1/runs/{run_id}").json()
         assert result["status"] == "succeeded"
         assert result["completed_stages"] == list(STAGES)
-        assert result["result"] == {
-            "revenue": 27200, "orders": 176, "mode": "synthetic"}
-        assert len(client.get(
-            f"/api/v1/projects/{project}/runs").json()["items"]) == 1
+        assert result["result"] == {"revenue": 27200, "orders": 176, "mode": "synthetic"}
+        assert len(client.get(f"/api/v1/projects/{project}/runs").json()["items"]) == 1
         response = client.get(f"/api/v1/runs/{run_id}/events?follow=false")
         assert response.status_code == 200
-        ids = [int(line[4:]) for line in response.text.splitlines()
-               if line.startswith("id: ")]
+        ids = [int(line[4:]) for line in response.text.splitlines() if line.startswith("id: ")]
         assert ids == list(range(1, result["event_sequence"] + 1))
         replay = client.get(
             f"/api/v1/runs/{run_id}/events?follow=false", headers={"Last-Event-ID": "2"}
@@ -89,19 +83,15 @@ def test_submission_execution_replay_and_ownership(db_engine):
             == 409
         )
         assert (
-            client.get(f"/api/v1/runs/{run_id}/events",
-                       headers={"Last-Event-ID": "-1"}).status_code
+            client.get(f"/api/v1/runs/{run_id}/events", headers={"Last-Event-ID": "-1"}).status_code
             == 422
         )
         with Session(db_engine) as db, db.begin():
-            db.execute(delete(RunEvent).where(
-                RunEvent.run_id == run_id, RunEvent.sequence <= 2))
-        assert "event: snapshot" in client.get(
-            f"/api/v1/runs/{run_id}/events?follow=false").text
+            db.execute(delete(RunEvent).where(RunEvent.run_id == run_id, RunEvent.sequence <= 2))
+        assert "event: snapshot" in client.get(f"/api/v1/runs/{run_id}/events?follow=false").text
         token = client.cookies.get("__Host-dtd_session")
         owner = client.get("/api/v1/auth/session").json()["user_id"]
-        assert client.post("/api/v1/auth/logout",
-                           headers=headers).status_code == 204
+        assert client.post("/api/v1/auth/logout", headers=headers).status_code == 204
         with pytest.raises(ApiError):
             event_batch(db_engine, run_id, owner, token, 0)
 
@@ -123,8 +113,7 @@ def test_recovery_fences_old_worker_and_preserves_checkpoint(db_engine):
         assert not complete(db_engine, stale, fixture_result(stale.stage))
         assert complete(db_engine, recovered, fixture_result(recovered.stage))
         work_once(db_engine)
-        assert client.get(
-            f"/api/v1/runs/{run_id}").json()["status"] == "succeeded"
+        assert client.get(f"/api/v1/runs/{run_id}").json()["status"] == "succeeded"
 
 
 @pytest.mark.parametrize("active", [False, True])
@@ -135,10 +124,8 @@ def test_cancellation_cannot_publish(db_engine, active):
         if active:
             dispatch_one(db_engine)
             claim = claim_one(db_engine)
-        response = client.post(
-            f"/api/v1/runs/{run_id}/cancel", headers=headers)
-        assert response.json()["status"] == (
-            "cancelling" if active else "cancelled")
+        response = client.post(f"/api/v1/runs/{run_id}/cancel", headers=headers)
+        assert response.json()["status"] == ("cancelling" if active else "cancelled")
         if claim:
             assert not complete(db_engine, claim, fixture_result(claim.stage))
         work_once(db_engine)
@@ -148,8 +135,7 @@ def test_cancellation_cannot_publish(db_engine, active):
 
 @pytest.mark.parametrize(
     "reason",
-    ["retry", "deadline", "config", "output",
-        "project", "dataset", "owner", "cancel-crash"],
+    ["retry", "deadline", "config", "output", "project", "dataset", "owner", "cancel-crash"],
 )
 def test_bounded_failure_and_publication_guards(db_engine, reason):
     with client_for(db_engine) as client:
@@ -174,8 +160,7 @@ def test_bounded_failure_and_publication_guards(db_engine, reason):
         else:
             with Session(db_engine) as db, db.begin():
                 if reason == "deadline":
-                    db.execute(update(Run).values(
-                        started_at=now() - timedelta(seconds=601)))
+                    db.execute(update(Run).values(started_at=now() - timedelta(seconds=601)))
                 if reason == "project":
                     db.execute(update(Project).values(deleted_at=now()))
                 if reason == "dataset":
@@ -198,13 +183,11 @@ def test_postgres_concurrent_claims_and_admission(postgres_engine):
     with client_for(postgres_engine) as client:
         headers, project, run_id = setup_run(client, postgres_engine)
         with ThreadPoolExecutor(max_workers=2) as pool:
-            responses = list(pool.map(lambda _: submit(
-                client, headers, project), range(2)))
+            responses = list(pool.map(lambda _: submit(client, headers, project), range(2)))
         assert all(response.json()["id"] == run_id for response in responses)
         dispatch_one(postgres_engine)
         with ThreadPoolExecutor(max_workers=2) as pool:
-            claims = list(
-                pool.map(lambda _: claim_one(postgres_engine), range(2)))
+            claims = list(pool.map(lambda _: claim_one(postgres_engine), range(2)))
         assert sum(claim is not None for claim in claims) == 1
 
 
@@ -215,17 +198,14 @@ def test_postgres_cancel_publication_race(postgres_engine):
         work_once(postgres_engine)
         claim = claim_one(postgres_engine)
         with ThreadPoolExecutor(max_workers=2) as pool:
-            publish = pool.submit(complete, postgres_engine,
-                                  claim, fixture_result(claim.stage))
-            cancel = pool.submit(
-                client.post, f"/api/v1/runs/{run_id}/cancel", headers=headers)
+            publish = pool.submit(complete, postgres_engine, claim, fixture_result(claim.stage))
+            cancel = pool.submit(client.post, f"/api/v1/runs/{run_id}/cancel", headers=headers)
             assert cancel.result().status_code == 200
             published = publish.result()
         result = client.get(f"/api/v1/runs/{run_id}").json()
         assert result["status"] == ("succeeded" if published else "cancelled")
         assert (result["result"] is not None) == published
-        assert not complete(postgres_engine, claim,
-                            fixture_result(claim.stage))
+        assert not complete(postgres_engine, claim, fixture_result(claim.stage))
 
 
 def test_postgres_worker_process_restart(postgres_engine):
@@ -233,10 +213,8 @@ def test_postgres_worker_process_restart(postgres_engine):
         _, _, run_id = setup_run(client, postgres_engine)
         with postgres_engine.connect() as connection:
             schema = connection.scalar(text("SELECT current_schema()"))
-        url = postgres_engine.url.update_query_dict(
-            {"options": f"-csearch_path={schema}"})
-        env = {**os.environ,
-               "DTD_PROCESS_TEST_URL": url.render_as_string(hide_password=False)}
+        url = postgres_engine.url.update_query_dict({"options": f"-csearch_path={schema}"})
+        env = {**os.environ, "DTD_PROCESS_TEST_URL": url.render_as_string(hide_password=False)}
         code = (
             "import os,json; from dataclasses import asdict; "
             "from dtd_api.database import make_engine; "
@@ -254,17 +232,21 @@ def test_postgres_worker_process_restart(postgres_engine):
         recovered = claim_one(postgres_engine)
         assert recovered.stage == STAGES[1]
         assert recovered.token != abandoned["token"]
-        assert complete(postgres_engine, recovered,
-                        fixture_result(recovered.stage))
+        assert complete(postgres_engine, recovered, fixture_result(recovered.stage))
         work_once(postgres_engine)
-        assert client.get(
-            f"/api/v1/runs/{run_id}").json()["status"] == "succeeded"
+        assert client.get(f"/api/v1/runs/{run_id}").json()["status"] == "succeeded"
 
 
 def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
     import hashlib
 
-    from dtd_api.cleaning_contracts import CleaningReport, CleaningSummary
+    from dtd_api.baseline_contracts import (
+        BaselineComparison,
+        BaselineReport,
+        ModelMetrics,
+        SplitInfo,
+    )
+    from dtd_api.cleaning_contracts import CleaningReport, CleaningSummary, ColumnLineage
     from dtd_api.inspections import inspection_once
     from dtd_api.profiles import profile_once
     from test_inspections import fixture_report, setup
@@ -275,27 +257,69 @@ def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
 
     fake_csv = b"col_a,col_b\n1,2\n"
 
-    def fake_transform(data, file_format, image, script, delimiter=None, table_name=None):
-        report = CleaningReport(
-            schema_version="1",
-            status="ready",
-            input_sha256=hashlib.sha256(data).hexdigest(),
-            output_sha256=hashlib.sha256(fake_csv).hexdigest(),
-            summary=CleaningSummary(
-                original_rows=2,
-                cleaned_rows=2,
-                original_columns=2,
-                cleaned_columns=2,
-                duplicate_rows_removed=0,
-            ),
-            operations=[],
-            lineage=[],
-            warnings=[],
-        )
-        return report, fake_csv
+    def fake_transform(
+        data, file_format, image, script, delimiter=None, table_name=None, mode="transform"
+    ):
+        if mode == "transform":
+            report = CleaningReport(
+                schema_version="1",
+                status="ready",
+                input_sha256=hashlib.sha256(data).hexdigest(),
+                output_sha256=hashlib.sha256(fake_csv).hexdigest(),
+                summary=CleaningSummary(
+                    original_rows=2,
+                    cleaned_rows=2,
+                    original_columns=2,
+                    cleaned_columns=2,
+                    duplicate_rows_removed=0,
+                ),
+                operations=[],
+                lineage=[
+                    ColumnLineage(
+                        original_name="a",
+                        clean_name="a",
+                        original_inferred_type="string",
+                        clean_type="string",
+                        null_count_before=0,
+                        null_count_after=0,
+                    ),
+                    ColumnLineage(
+                        original_name="b",
+                        clean_name="b",
+                        original_inferred_type="string",
+                        clean_type="string",
+                        null_count_before=0,
+                        null_count_after=0,
+                    ),
+                ],
+                warnings=[],
+            )
+            return report, fake_csv
+        elif mode == "baseline":
+            report = BaselineReport(
+                schema_version="1",
+                status="ready",
+                input_sha256=hashlib.sha256(data).hexdigest(),
+                task_type="classification",
+                target_column="a",
+                features=[],
+                split=SplitInfo(
+                    train_rows=1, test_rows=1, seed=42, strategy="stratified", test_fraction=0.5
+                ),
+                reference=ModelMetrics(
+                    model_name="dummy", accuracy=1.0, macro_f1=1.0, fit_time_seconds=0.1
+                ),
+                candidate=ModelMetrics(
+                    model_name="logistic", accuracy=1.0, macro_f1=1.0, fit_time_seconds=0.1
+                ),
+                comparison=BaselineComparison(
+                    candidate_better=False, better_model="dummy", reason="test"
+                ),
+                confusion_matrix=[[1]],
+            )
+            return report, fake_csv
 
-    monkeypatch.setattr(
-        "dtd_api.run_engine.run_isolated_transform", fake_transform)
+    monkeypatch.setattr("dtd_api.run_engine.run_isolated_transform", fake_transform)
 
     with client_for(db_engine) as client, client_for(db_engine) as bob:
         headers, project, dataset = setup(client, db_engine)
@@ -307,11 +331,18 @@ def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
         ).json()["dataset_version_id"]
 
         run_url = f"/api/v1/projects/{project}/runs"
+
+        run_payload = {
+            "dataset_version_id": version_id,
+            "target_column": "a",
+            "task_type": "classification",
+        }
+
         assert (
             client.post(
                 run_url,
                 headers={**headers, "Idempotency-Key": "analysis-1"},
-                json={"dataset_version_id": version_id},
+                json=run_payload,
             ).status_code
             == 409
         )
@@ -323,7 +354,7 @@ def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
         res = client.post(
             run_url,
             headers={**headers, "Idempotency-Key": "analysis-1"},
-            json={"dataset_version_id": version_id},
+            json=run_payload,
         )
         assert res.status_code == 202
         run_id = res.json()["id"]
@@ -332,7 +363,7 @@ def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
         replay = client.post(
             run_url,
             headers={**headers, "Idempotency-Key": "analysis-1"},
-            json={"dataset_version_id": version_id},
+            json=run_payload,
         )
         assert replay.status_code == 202
         assert replay.json()["id"] == run_id
@@ -341,24 +372,32 @@ def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
             client.post(
                 run_url,
                 headers={**headers, "Idempotency-Key": "analysis-2"},
-                json={"dataset_version_id": version_id},
+                json=run_payload,
             ).status_code
             == 429
         )
 
         fake_transformer_image = "sha256:" + "a" * 64
-        assert work_once(db_engine, fake_transformer_image)
+        assert work_once(db_engine, fake_transformer_image)  # clean_dataset
+        assert work_once(db_engine, fake_transformer_image)  # train_baseline
 
         run_data = client.get(f"/api/v1/runs/{run_id}").json()
         assert run_data["status"] == "succeeded"
         assert "clean_dataset" in run_data["completed_stages"]
+        assert "train_baseline" in run_data["completed_stages"]
         assert run_data["result"]["status"] == "ready"
 
         art_url = f"/api/v1/projects/{project}/runs/{run_id}/artifacts"
         artifacts = client.get(art_url).json()
-        assert len(artifacts) == 3
+        assert len(artifacts) == 5
         kinds = {a["kind"] for a in artifacts}
-        assert kinds == {"cleaned_data", "cleaning_report", "generated_script"}
+        assert kinds == {
+            "cleaned_data",
+            "cleaning_report",
+            "generated_script",
+            "baseline_report",
+            "baseline_script",
+        }
 
         cleaned_art = next(a for a in artifacts if a["kind"] == "cleaned_data")
         dl_res = client.get(f"{art_url}/{cleaned_art['id']}/download")

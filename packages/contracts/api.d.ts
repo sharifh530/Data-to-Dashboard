@@ -410,6 +410,10 @@ export interface components {
              * Format: uuid
              */
             dataset_version_id: string;
+            /** Target Column */
+            target_column?: string | null;
+            /** Task Type */
+            task_type?: ("classification" | "regression") | null;
         };
         /** ArtifactView */
         ArtifactView: {

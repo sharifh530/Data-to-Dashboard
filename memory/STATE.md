@@ -19,7 +19,11 @@ September 21: `npm run test:postgres` 114 passed (0 failures, 0 skips); `npm run
 
 ## Limitations and next concrete action
 
-B01/B05/B07/B12 remain partial; B08 is complete. Next milestone: B09 Baseline evaluation (feature selection, baseline modeling split before fitting preprocessing, scikit-learn evaluation metrics inside gVisor). LLM integration for code generation remains future work (heuristics-based generator currently active). Run cancellation during active gVisor work fences publication and cancels safely.
+B01/B05/B07/B12 remain partial; B08 is complete. Current Phase: Milestone B09 (Baseline evaluation)
+Status: Completed baseline execution and unit testing! The core API gracefully handles classification/regression tasks via deterministically generated baseline `scikit-learn` scripts executed securely in the gVisor sandbox. Tests for baseline generator, api runs, and transformer acceptance suite are fully passing. Linter and typechecks are passing.
+
+Next concrete action: B10 (Analysis rendering & layout). We'll design the React UI to display cleaning profiles and baseline models.
+Wait for user sign-off to proceed to B10.
 
 ## Local operations and source control
 

@@ -55,7 +55,37 @@ def main() -> None:
         flush=True,
     )
 
-    print("4. Testing rejection of failing script...", flush=True)
+    print("4. Generating baseline regression workflow...", flush=True)
+    from dtd_api.baseline_generator import generate_baseline_workflow
+
+    clean_columns = [c.clean_name for c in report.lineage]
+    base_script, features = generate_baseline_workflow(
+        profile, "revenue", "regression", clean_columns
+    )
+    assert "train_baseline" in base_script
+
+    print("5. Executing isolated baseline model in gVisor...", flush=True)
+    base_report, empty_csv = run_isolated_transform(
+        data=cleaned_csv,
+        file_format="csv",
+        image=args.image,
+        script=base_script,
+        mode="baseline",
+    )
+    assert base_report.status == "ready", (
+        f"Expected ready, got {base_report.error} / {base_report.skip_reason}"
+    )  # noqa: E501
+    assert base_report.reference is not None
+    assert base_report.candidate is not None
+    assert base_report.candidate.mae is not None
+    assert len(empty_csv) == 0
+    print(
+        f"   Success: Reference MAE: {base_report.reference.mae:.2f}, "
+        f"Candidate MAE: {base_report.candidate.mae:.2f}",
+        flush=True,
+    )
+
+    print("6. Testing rejection of failing script...", flush=True)
     failing_script = "def clean_dataset(df):\n    raise ValueError('Deliberate test failure')\n"
     rej_report, _ = run_isolated_transform(
         data=sample_bytes,
@@ -68,7 +98,7 @@ def main() -> None:
     assert rej_report.error == "SCRIPT_EXECUTION_FAILED"
     print("   Success: failing script safely rejected.", flush=True)
 
-    print("5. Testing rejection of invalid return type...", flush=True)
+    print("7. Testing rejection of invalid return type...", flush=True)
     invalid_script = "def clean_dataset(df):\n    return 'not a dataframe', {}\n"
     inv_report, _ = run_isolated_transform(
         data=sample_bytes,

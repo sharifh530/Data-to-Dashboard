@@ -9,6 +9,7 @@ from sqlalchemy import Engine, and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from dtd_api.artifacts import store_artifact
+from dtd_api.baseline_generator import generate_baseline_workflow
 from dtd_api.cleaning_generator import generate_cleaning_workflow
 from dtd_api.inspection_contracts import ProfileReport
 from dtd_api.models import (
@@ -29,7 +30,7 @@ from dtd_api.transformations import run_isolated_transform
 
 TERMINAL = {"succeeded", "succeeded_with_warnings", "failed", "cancelled"}
 STAGES = ("profile_fixture", "summarize_fixture", "publish_fixture")
-ANALYSIS_STAGES = ("clean_dataset",)
+ANALYSIS_STAGES = ("clean_dataset", "train_baseline")
 LEASE_SECONDS = 5
 MAX_ATTEMPTS = 3
 DEADLINE_SECONDS = 600
@@ -277,7 +278,7 @@ def complete(engine: Engine, claim: Claim, output: dict[str, object]) -> bool:
                 "succeeded",
                 "Synthetic workflow completed; no model executed"
                 if is_synthetic
-                else "Dataset cleaning completed; artifacts stored.",
+                else "Dataset analysis completed.",
             )
         else:
             job.state = "pending"
@@ -386,7 +387,162 @@ def execute_clean_dataset(engine: Engine, claim: Claim, transformer_image: str |
         job.token = None
         job.lease_expires_at = None
         run.result = output
-        terminal(db, run, job, "succeeded", "Dataset cleaning completed; artifacts stored.")
+
+        # We manually transition here because analysis stages are dynamic based on config
+        if claim.stage == ANALYSIS_STAGES[-1] or run.config.get("target_column") is None:
+            terminal(db, run, job, "succeeded", "Dataset cleaning completed; artifacts stored.")
+        else:
+            job.state = "pending"
+        return True
+
+
+def execute_train_baseline(engine: Engine, claim: Claim, transformer_image: str | None) -> bool:
+    if not transformer_image:
+        with Session(engine) as db, db.begin():
+            run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+            job = db.get(WorkItem, claim.run_id)
+            if run and job:
+                terminal(db, run, job, "failed", "The isolated transformer is not configured.")
+        return True
+
+    with Session(engine) as db:
+        run = db.get(Run, claim.run_id)
+        assert run is not None
+        version = db.get(DatasetVersion, run.dataset_version_id)
+
+        target_column = run.config.get("target_column")
+        task_type = run.config.get("task_type")
+
+        if not target_column or not task_type:
+            # Complete the stage without doing anything if no target
+            output: dict[str, object] = {
+                "status": "skipped",
+                "skip_reason": "No target column specified",
+            }  # noqa: E501
+            return complete(engine, claim, output)
+
+        if version is None:
+            with db.begin():
+                run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+                job = db.get(WorkItem, claim.run_id)
+                if run and job:
+                    terminal(db, run, job, "failed", "Dataset version not found.")
+            return True
+
+        profile = db.get(Profile, version.id)
+        if profile is None or profile.status != "ready" or profile.report is None:
+            with db.begin():
+                run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+                job = db.get(WorkItem, claim.run_id)
+                if run and job:
+                    terminal(db, run, job, "failed", "Dataset profile not ready.")
+            return True
+
+        profile_report = ProfileReport.model_validate(profile.report)
+
+    with Session(engine) as db:
+        run = db.get(Run, claim.run_id)
+        assert run is not None
+        project_id = run.project_id
+        # Fetch the cleaned data artifact from the previous stage
+        cleaning_output = run.checkpoint.get("clean_dataset", {})
+        if not isinstance(cleaning_output, dict):
+            cleaning_output = {}
+
+    from dtd_api.artifacts import ARTIFACTS_DIR
+
+    # Locate cleaned CSV
+    cleaned_csv_bytes = None
+    artifacts_path = ARTIFACTS_DIR / f"projects/{project_id}/runs/{claim.run_id}/artifacts"
+    for attempt_folder in artifacts_path.glob("*"):
+        candidate = attempt_folder / "cleaned.csv"
+        if candidate.exists():
+            cleaned_csv_bytes = candidate.read_bytes()
+            break
+
+    if not cleaned_csv_bytes:
+        with Session(engine) as db, db.begin():
+            run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+            job = db.get(WorkItem, claim.run_id)
+            if run and job:
+                terminal(db, run, job, "failed", "Cleaned dataset CSV not found.")
+        return True
+
+    clean_columns = [
+        str(col["clean_name"])
+        for col in cleaning_output.get("lineage", [])
+        if isinstance(col, dict)
+    ]  # noqa: E501
+
+    from typing import Literal, cast
+
+    try:
+        task_type_lit = cast(Literal["classification", "regression"], str(task_type))
+        script, _ = generate_baseline_workflow(
+            profile_report, str(target_column), task_type_lit, clean_columns
+        )
+        baseline_report, _ = run_isolated_transform(
+            data=cleaned_csv_bytes,
+            file_format="csv",
+            image=transformer_image,
+            script=script,
+            mode="baseline",
+        )
+    except Exception as exc:
+        with Session(engine) as db, db.begin():
+            run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+            job = db.get(WorkItem, claim.run_id)
+            if run and job:
+                terminal(db, run, job, "failed", f"Baseline execution error: {exc}")
+        return True
+
+    with Session(engine) as db, db.begin():
+        run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+        job = db.get(WorkItem, claim.run_id)
+        if run and job and run.status == "cancelling" and job.token == claim.token:
+            terminal(db, run, job, "cancelled", "Worker acknowledged cancellation")
+            return False
+        if not valid_claim(run, job, claim):
+            return False
+        assert run is not None and job is not None
+
+        if baseline_report.status == "failed":
+            terminal(db, run, job, "failed", f"Baseline modeling failed: {baseline_report.error}")
+            return False
+
+        store_artifact(
+            db,
+            project_id,
+            claim.run_id,
+            "baseline_report",
+            "baseline_report.json",
+            baseline_report.model_dump_json().encode(),
+        )
+        store_artifact(
+            db, project_id, claim.run_id, "baseline_script", "train_baseline.py", script.encode()
+        )
+
+        output = baseline_report.model_dump()
+        attempt = db.get(StageAttempt, claim.attempt_id)
+        assert attempt is not None
+        attempt.status = "succeeded"
+        run.checkpoint = {**run.checkpoint, claim.stage: output}
+        emit(db, run, "stage_completed", {"stage": claim.stage})
+        job.token = None
+        job.lease_expires_at = None
+
+        if claim.stage == ANALYSIS_STAGES[-1]:
+            run.result = output
+            terminal(
+                db,
+                run,
+                job,
+                "succeeded",
+                "Dataset analysis completed.",
+            )
+        else:
+            job.state = "pending"
+
         return True
 
 
@@ -397,6 +553,9 @@ def work_once(engine: Engine, transformer_image: str | None = None) -> bool:
         return dispatched
     if claim.mode == "synthetic":
         complete(engine, claim, fixture_result(claim.stage))
-    elif claim.mode == "analysis" and claim.stage == "clean_dataset":
-        execute_clean_dataset(engine, claim, transformer_image)
+    elif claim.mode == "analysis":
+        if claim.stage == "clean_dataset":
+            execute_clean_dataset(engine, claim, transformer_image)
+        elif claim.stage == "train_baseline":
+            execute_train_baseline(engine, claim, transformer_image)
     return True

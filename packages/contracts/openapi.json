@@ -8,6 +8,32 @@
             "format": "uuid",
             "title": "Dataset Version Id",
             "type": "string"
+          },
+          "target_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Column"
+          },
+          "task_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "classification",
+                  "regression"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Type"
           }
         },
         "required": [

@@ -9,6 +9,7 @@ from dtd_api.contracts import Contract
 
 class CleaningOperation(Contract):
     """An individual recorded cleaning operation with rationale."""
+
     operation_type: Literal[
         "normalize_headers",
         "trim_whitespace",
@@ -24,6 +25,7 @@ class CleaningOperation(Contract):
 
 class ColumnLineage(Contract):
     """Lineage record tracking column names and type evolution."""
+
     original_name: str = Field(max_length=128)
     clean_name: str = Field(max_length=128)
     original_inferred_type: str = Field(max_length=32)
@@ -34,6 +36,7 @@ class ColumnLineage(Contract):
 
 class CleaningSummary(Contract):
     """High-level metrics before and after cleaning."""
+
     original_rows: int = Field(ge=0)
     cleaned_rows: int = Field(ge=0)
     original_columns: int = Field(ge=0)
@@ -44,6 +47,7 @@ class CleaningSummary(Contract):
 
 class CleaningReport(Contract):
     """Complete provenance report produced by the cleaning execution."""
+
     schema_version: Literal["1"] = "1"
     status: Literal["ready", "rejected", "failed"]
     input_sha256: str = Field(max_length=64)

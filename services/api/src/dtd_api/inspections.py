@@ -55,8 +55,7 @@ def view(item: Inspection) -> InspectionView:
         dataset_id=item.dataset_id,
         status=item.status,
         attempts=item.attempts,
-        report=InspectionReport.model_validate(
-            item.report) if item.report else None,
+        report=InspectionReport.model_validate(item.report) if item.report else None,
         error=item.error,
         delimiter_override=item.delimiter_override,
         selected_table=item.selected_table,
@@ -76,27 +75,21 @@ def request_inspection(
     metadata(db, str(dataset_id), principal.user.id)
     image = request.app.state.settings.inspection_image
     if image is None:
-        raise ApiError(503, "INSPECTION_UNAVAILABLE",
-                       "The isolated inspector is not configured.")
-    db.scalar(select(User).where(
-        User.id == principal.user.id).with_for_update())
-    dataset = db.scalar(select(Dataset).where(
-        Dataset.id == str(dataset_id)).with_for_update())
+        raise ApiError(503, "INSPECTION_UNAVAILABLE", "The isolated inspector is not configured.")
+    db.scalar(select(User).where(User.id == principal.user.id).with_for_update())
+    dataset = db.scalar(select(Dataset).where(Dataset.id == str(dataset_id)).with_for_update())
     if dataset is None:
         raise ApiError(404, "NOT_FOUND", "Stored dataset not found.")
     delimiter = options.delimiter if options else None
     if dataset.format != "csv" and delimiter:
-        raise ApiError(422, "INVALID_DELIMITER",
-                       "Choose a supported CSV delimiter.")
+        raise ApiError(422, "INVALID_DELIMITER", "Choose a supported CSV delimiter.")
     item = db.get(Inspection, str(dataset_id))
     if item and item.delimiter_override == delimiter:
         return view(item)
     if item and item.status in {"queued", "running"}:
-        raise ApiError(409, "INSPECTION_PENDING",
-                       "Wait for inspection to finish.")
+        raise ApiError(409, "INSPECTION_PENDING", "Wait for inspection to finish.")
     if item and item.revisions >= 3:
-        raise ApiError(409, "INSPECTION_REVISION_LIMIT",
-                       "Upload again to try more options.")
+        raise ApiError(409, "INSPECTION_REVISION_LIMIT", "Upload again to try more options.")
     pending = db.scalar(
         select(Inspection.dataset_id)
         .join(Dataset)
@@ -104,8 +97,7 @@ def request_inspection(
         .where(Project.owner_id == principal.user.id, Inspection.status.in_(["queued", "running"]))
     )
     if pending:
-        raise ApiError(429, "INSPECTION_LIMIT",
-                       "Wait for your current inspection to finish.")
+        raise ApiError(429, "INSPECTION_LIMIT", "Wait for your current inspection to finish.")
     if item:
         item.status, item.token, item.lease_until = "queued", None, None
         item.attempts, item.image, item.report, item.error = 0, image, None, None
@@ -114,8 +106,7 @@ def request_inspection(
         item.selected_version_id = None
         item.revisions += 1
     else:
-        item = Inspection(dataset_id=str(dataset_id),
-                          image=image, delimiter_override=delimiter)
+        item = Inspection(dataset_id=str(dataset_id), image=image, delimiter_override=delimiter)
         db.add(item)
     db.add(
         AuditEvent(
@@ -135,18 +126,14 @@ def select_table(
 ) -> InspectionView:
     stored = metadata(db, str(dataset_id), principal.user.id)
     item = db.scalar(
-        select(Inspection).where(Inspection.dataset_id ==
-                                 str(dataset_id)).with_for_update()
+        select(Inspection).where(Inspection.dataset_id == str(dataset_id)).with_for_update()
     )
     if item is None or item.status != "ready" or item.report is None:
-        raise ApiError(409, "INSPECTION_NOT_READY",
-                       "Inspect the dataset first.")
+        raise ApiError(409, "INSPECTION_NOT_READY", "Inspect the dataset first.")
     report = InspectionReport.model_validate(item.report)
-    table = next(
-        (table for table in report.tables if table.name == choice.table), None)
+    table = next((table for table in report.tables if table.name == choice.table), None)
     if table is None:
-        raise ApiError(422, "UNKNOWN_TABLE",
-                       "Choose a table from the inspection result.")
+        raise ApiError(422, "UNKNOWN_TABLE", "Choose a table from the inspection result.")
     if item.selected_table == choice.table and item.selected_version_id:
         return view(item)
     selection = {
@@ -189,8 +176,7 @@ def detail(dataset_id: UUID, principal: AUTH, db: DB) -> InspectionView:
 def cancel(dataset_id: UUID, principal: MUTATION, db: DB) -> InspectionView:
     metadata(db, str(dataset_id), principal.user.id)
     item = db.scalar(
-        select(Inspection).where(Inspection.dataset_id ==
-                                 str(dataset_id)).with_for_update()
+        select(Inspection).where(Inspection.dataset_id == str(dataset_id)).with_for_update()
     )
     if item is None:
         raise ApiError(404, "NOT_FOUND", "No inspection requested yet.")
@@ -236,8 +222,7 @@ def run_isolated(
     if profile_index is not None:
         command.extend(["--profile-index", str(profile_index)])
     # Linux broker caps output and removes the container before returning this bounded report.
-    result = subprocess.run(command, input=data,
-                            capture_output=True, timeout=60, check=False)
+    result = subprocess.run(command, input=data, capture_output=True, timeout=60, check=False)
     if result.returncode != 0 or len(result.stdout) > 524288:
         raise RuntimeError("Isolated inspector unavailable or failed")
     return result.stdout
@@ -250,8 +235,7 @@ def inspection_once(engine: Engine) -> bool:
             .where(
                 or_(
                     Inspection.status == "queued",
-                    and_(Inspection.status == "running",
-                         Inspection.lease_until < now()),
+                    and_(Inspection.status == "running", Inspection.lease_until < now()),
                 )
             )
             .with_for_update(skip_locked=True)
@@ -304,8 +288,7 @@ def inspection_once(engine: Engine) -> bool:
         error = "INSPECTOR_FAILED"
     with Session(engine) as db, db.begin():
         item = db.scalar(
-            select(Inspection).where(
-                Inspection.dataset_id == dataset_id).with_for_update()
+            select(Inspection).where(Inspection.dataset_id == dataset_id).with_for_update()
         )
         assert item is not None
         from dtd_api.run_engine import utc
