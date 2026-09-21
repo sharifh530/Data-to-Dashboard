@@ -1,4 +1,6 @@
 import asyncio
+import base64
+import hashlib
 import json
 from collections.abc import AsyncIterator
 from datetime import timedelta
@@ -6,7 +8,7 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from anyio import to_thread
-from fastapi import APIRouter, Header, Query, Request
+from fastapi import APIRouter, Header, Query, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import model_validator
 from sqlalchemy import Engine, delete, select
@@ -43,6 +45,7 @@ from dtd_api.models import (
 from dtd_api.projects import KEY, owned
 from dtd_api.query_broker import execute_dashboard_query
 from dtd_api.run_engine import TERMINAL, emit, terminal, utc
+from dtd_api.settings import ROOT
 
 router = APIRouter(prefix="/api/v1", tags=["Synthetic runs"])
 
@@ -59,7 +62,8 @@ class AnalysisRunCreate(Contract):
     @model_validator(mode="after")
     def validate_target(self) -> "AnalysisRunCreate":
         if bool(self.target_column) != bool(self.task_type):
-            raise ValueError("target_column and task_type must be provided together")
+            raise ValueError(
+                "target_column and task_type must be provided together")
         return self
 
 
@@ -95,7 +99,8 @@ def view(run: Run) -> RunView:
         event_sequence=run.event_sequence,
         completed_stages=list(run.checkpoint),
         result=run.result,
-        dataset_version_id=UUID(run.dataset_version_id) if run.dataset_version_id else None,
+        dataset_version_id=UUID(
+            run.dataset_version_id) if run.dataset_version_id else None,
     )
 
 
@@ -130,7 +135,8 @@ def create_demo(
     idempotency_key: KEY,
 ) -> RunView:
     owned(db, str(project_id), principal.user.id)
-    db.execute(select(User).where(User.id == principal.user.id).with_for_update()).scalar_one()
+    db.execute(select(User).where(
+        User.id == principal.user.id).with_for_update()).scalar_one()
     route = f"POST /projects/{project_id}/demo-runs"
     db.execute(
         delete(IdempotencyRecord).where(
@@ -141,10 +147,12 @@ def create_demo(
         )
     )
     fingerprint = digest(json.dumps(body.model_dump(), sort_keys=True))
-    replay = db.get(IdempotencyRecord, (principal.user.id, route, idempotency_key))
+    replay = db.get(IdempotencyRecord,
+                    (principal.user.id, route, idempotency_key))
     if replay:
         if replay.request_hash != fingerprint:
-            raise ApiError(409, "IDEMPOTENCY_CONFLICT", "Key belongs to a different request.")
+            raise ApiError(409, "IDEMPOTENCY_CONFLICT",
+                           "Key belongs to a different request.")
         return view(owned_run(db, replay.resource_id, principal.user.id))
     active = db.scalar(
         select(Run.id)
@@ -179,7 +187,8 @@ def create_demo(
     db.add(run)
     db.flush()
     emit(db, run, "run_queued", {"mode": "synthetic", "fixture": body.fixture})
-    db.add(Outbox(project_id=run.project_id, topic="run.requested", payload={"run_id": run.id}))
+    db.add(Outbox(project_id=run.project_id,
+           topic="run.requested", payload={"run_id": run.id}))
     db.add(
         IdempotencyRecord(
             owner_id=principal.user.id,
@@ -212,7 +221,8 @@ def create_analysis_run(
     idempotency_key: KEY,
 ) -> RunView:
     owned(db, str(project_id), principal.user.id)
-    db.execute(select(User).where(User.id == principal.user.id).with_for_update()).scalar_one()
+    db.execute(select(User).where(
+        User.id == principal.user.id).with_for_update()).scalar_one()
     route = f"POST /projects/{project_id}/runs"
     db.execute(
         delete(IdempotencyRecord).where(
@@ -222,11 +232,14 @@ def create_analysis_run(
             IdempotencyRecord.expires_at <= now(),
         )
     )
-    fingerprint = digest(json.dumps(body.model_dump(mode="json"), sort_keys=True))
-    replay = db.get(IdempotencyRecord, (principal.user.id, route, idempotency_key))
+    fingerprint = digest(json.dumps(
+        body.model_dump(mode="json"), sort_keys=True))
+    replay = db.get(IdempotencyRecord,
+                    (principal.user.id, route, idempotency_key))
     if replay:
         if replay.request_hash != fingerprint:
-            raise ApiError(409, "IDEMPOTENCY_CONFLICT", "Key belongs to a different request.")
+            raise ApiError(409, "IDEMPOTENCY_CONFLICT",
+                           "Key belongs to a different request.")
         return view(owned_run(db, replay.resource_id, principal.user.id))
     active = db.scalar(
         select(Run.id)
@@ -242,7 +255,8 @@ def create_analysis_run(
     version_id = str(body.dataset_version_id)
     version = db.scalar(
         select(DatasetVersion).where(
-            DatasetVersion.id == version_id, DatasetVersion.project_id == str(project_id)
+            DatasetVersion.id == version_id, DatasetVersion.project_id == str(
+                project_id)
         )
     )
     if version is None:
@@ -252,9 +266,11 @@ def create_analysis_run(
 
     profile = db.get(Profile, version_id)
     if profile is None or profile.status != "ready":
-        raise ApiError(409, "PROFILE_REQUIRED", "Dataset version must be profiled before analysis.")
+        raise ApiError(409, "PROFILE_REQUIRED",
+                       "Dataset version must be profiled before analysis.")
 
-    config: dict[str, object] = {"mode": "analysis", "dataset_version_id": version.id}
+    config: dict[str, object] = {
+        "mode": "analysis", "dataset_version_id": version.id}
     if body.target_column:
         config["target_column"] = body.target_column
         config["task_type"] = body.task_type
@@ -266,8 +282,10 @@ def create_analysis_run(
     )
     db.add(run)
     db.flush()
-    emit(db, run, "run_queued", {"mode": "analysis", "dataset_version_id": version.id})
-    db.add(Outbox(project_id=run.project_id, topic="run.requested", payload={"run_id": run.id}))
+    emit(db, run, "run_queued", {
+         "mode": "analysis", "dataset_version_id": version.id})
+    db.add(Outbox(project_id=run.project_id,
+           topic="run.requested", payload={"run_id": run.id}))
     db.add(
         IdempotencyRecord(
             owner_id=principal.user.id,
@@ -349,22 +367,109 @@ def get_dashboard(
 
     artifact = db.get(Artifact, dash.spec_artifact_id)
     if artifact is None or artifact.deletion_state != "active":
-        raise ApiError(404, "NOT_FOUND", "Dashboard specification artifact missing.")
+        raise ApiError(404, "NOT_FOUND",
+                       "Dashboard specification artifact missing.")
 
     file_path = ARTIFACTS_DIR / artifact.private_key
     if not file_path.exists():
-        raise ApiError(404, "NOT_FOUND", "Dashboard specification file missing.")
+        raise ApiError(404, "NOT_FOUND",
+                       "Dashboard specification file missing.")
 
     try:
         spec = DashboardSpec.model_validate_json(file_path.read_text("utf-8"))
     except Exception as exc:
-        raise ApiError(500, "INVALID_SPEC", "Failed to parse dashboard specification.") from exc
+        raise ApiError(500, "INVALID_SPEC",
+                       "Failed to parse dashboard specification.") from exc
 
     return DashboardView(
         run_id=UUID(run.id),
         spec=spec,
+        bundle_artifact_id=UUID(
+            dash.bundle_artifact_id) if dash.bundle_artifact_id else None,
         render_mode=dash.render_mode,  # type: ignore[arg-type]
         status="ready" if run.status in TERMINAL else "generating",
+    )
+
+
+@router.get("/runs/{run_id}/dashboard/render")
+@router.get("/projects/{project_id}/runs/{run_id}/dashboard/render")
+def render_dashboard(
+    run_id: UUID,
+    principal: AUTH,
+    db: DB,
+    project_id: UUID | None = None,
+) -> Response:
+    run = owned_run(db, str(run_id), principal.user.id)
+    if project_id and run.project_id != str(project_id):
+        raise ApiError(404, "NOT_FOUND", "Run not found in project.")
+
+    dash = db.scalar(select(Dashboard).where(Dashboard.run_id == str(run_id)))
+    if dash is None or not dash.bundle_artifact_id:
+        raise ApiError(404, "NOT_FOUND",
+                       "Generated dashboard bundle not found.")
+
+    bundle_artifact = db.get(Artifact, dash.bundle_artifact_id)
+    if bundle_artifact is None or bundle_artifact.deletion_state != "active":
+        raise ApiError(404, "NOT_FOUND", "Bundle artifact missing.")
+
+    file_path = ARTIFACTS_DIR / bundle_artifact.private_key
+    if not file_path.exists():
+        raise ApiError(404, "NOT_FOUND", "Bundle file missing.")
+
+    bundle_script = file_path.read_text("utf-8")
+    if "</script" in bundle_script.lower():
+        raise ApiError(500, "UNSAFE_BUNDLE",
+                       "Bundle contains unsafe inline asset terminator.")
+
+    style_path = ROOT / "apps" / "renderer" / "style.css"
+    style_content = style_path.read_text(
+        "utf-8") if style_path.exists() else ""
+    if "</style" in style_content.lower():
+        raise ApiError(500, "UNSAFE_STYLE",
+                       "Style contains unsafe inline asset terminator.")
+
+    script_sha = f"'sha256-{base64.b64encode(hashlib.sha256(bundle_script.encode('utf-8')).digest()).decode('ascii')}'"
+    style_sha = f"'sha256-{base64.b64encode(hashlib.sha256(style_content.encode('utf-8')).digest()).decode('ascii')}'"
+
+    csp = (
+        "default-src 'none'; "
+        f"script-src {script_sha}; "
+        f"style-src {style_sha}; "
+        "connect-src 'none'; "
+        "img-src 'none'; "
+        "object-src 'none'; "
+        "base-uri 'none'; "
+        "form-action 'none'; "
+        "frame-src 'none'; "
+        "sandbox allow-scripts"
+    )
+
+    html = (
+        "<!doctype html>"
+        '<html lang="en">'
+        "<head>"
+        '<meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        "<title>Data to Dashboard · Generated Dashboard</title>"
+        f"<style>{style_content}</style>"
+        "</head>"
+        "<body>"
+        '<div id="root"></div>'
+        f"<script>{bundle_script}</script>"
+        "</body>"
+        "</html>"
+    )
+
+    return Response(
+        content=html,
+        media_type="text/html; charset=utf-8",
+        headers={
+            "Content-Security-Policy": csp,
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "no-referrer",
+            "Cache-Control": "no-store",
+            "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+        },
     )
 
 
@@ -389,7 +494,8 @@ def query_dashboard(
         )
     )
     if cleaned_artifact is None:
-        raise ApiError(404, "NOT_FOUND", "Cleaned dataset artifact not found for this run.")
+        raise ApiError(404, "NOT_FOUND",
+                       "Cleaned dataset artifact not found for this run.")
 
     file_path = ARTIFACTS_DIR / cleaned_artifact.private_key
     if not file_path.exists():
@@ -450,10 +556,12 @@ def event_batch(
             )
         )
         if not valid:
-            raise ApiError(401, "UNAUTHENTICATED", "Session expired or revoked.")
+            raise ApiError(401, "UNAUTHENTICATED",
+                           "Session expired or revoked.")
         run = owned_run(db, run_id, owner_id)
         if cursor > run.event_sequence:
-            raise ApiError(409, "INVALID_CURSOR", "Event cursor is ahead of this run.")
+            raise ApiError(409, "INVALID_CURSOR",
+                           "Event cursor is ahead of this run.")
         rows = list(
             db.scalars(
                 select(RunEvent)
@@ -491,7 +599,8 @@ def event_batch(
 @router.get(
     "/runs/{run_id}/events",
     response_class=StreamingResponse,
-    responses={200: {"content": {"text/event-stream": {"schema": {"type": "string"}}}}},
+    responses={
+        200: {"content": {"text/event-stream": {"schema": {"type": "string"}}}}},
 )
 async def events(
     run_id: UUID,

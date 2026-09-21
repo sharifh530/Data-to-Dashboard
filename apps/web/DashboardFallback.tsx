@@ -1,9 +1,9 @@
-import { useEffect, useState, useId } from 'react';
-import type { components } from '../../packages/contracts/api';
+import { useEffect, useState, useId } from "react";
+import type { components } from "../../packages/contracts/api";
 
-type DashboardView = components['schemas']['DashboardView'];
-type QueryResponse = components['schemas']['DashboardQueryResponse'];
-type FilterValue = components['schemas']['FilterValue'];
+type DashboardView = components["schemas"]["DashboardView"];
+type QueryResponse = components["schemas"]["DashboardQueryResponse"];
+type FilterValue = components["schemas"]["FilterValue"];
 
 export function DashboardFallback({
   runId,
@@ -16,13 +16,13 @@ export function DashboardFallback({
 }) {
   const [dashboard, setDashboard] = useState<DashboardView | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [filters, setFilters] = useState<Record<string, FilterValue>>({});
   const [chartData, setChartData] = useState<Record<string, QueryResponse>>({});
   const [tableData, setTableData] = useState<QueryResponse | null>(null);
   const [tablePage, setTablePage] = useState(0);
   const [sortBy, setSortBy] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const baseId = useId();
 
   // Load Dashboard Spec
@@ -31,19 +31,21 @@ export function DashboardFallback({
     async function load() {
       try {
         setLoading(true);
-        setError('');
+        setError("");
         const res = await fetch(`/api/v1/runs/${runId}/dashboard`, {
           signal: controller.signal,
         });
         if (!res.ok) {
           const err = await res.json().catch(() => null);
-          throw new Error(err?.error?.message ?? 'Failed to load dashboard specification.');
+          throw new Error(
+            err?.error?.message ?? "Failed to load dashboard specification.",
+          );
         }
         const data: DashboardView = await res.json();
         setDashboard(data);
       } catch (e) {
         if (!controller.signal.aborted) {
-          setError(e instanceof Error ? e.message : 'Connection failed.');
+          setError(e instanceof Error ? e.message : "Connection failed.");
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -62,13 +64,13 @@ export function DashboardFallback({
       queryId: string,
       page = 0,
       sortCol: string | null = null,
-      sortDir: 'asc' | 'desc' = 'asc'
+      sortDir: "asc" | "desc" = "asc",
     ): Promise<QueryResponse> {
       const res = await fetch(`/api/v1/runs/${runId}/queries`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrf,
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrf,
         },
         body: JSON.stringify({
           query_id: queryId,
@@ -98,7 +100,7 @@ export function DashboardFallback({
     });
 
     // Run table query
-    void executeQuery('table', tablePage, sortBy, sortDirection).then((res) => {
+    void executeQuery("table", tablePage, sortBy, sortDirection).then((res) => {
       if (!controller.signal.aborted) {
         setTableData(res);
       }
@@ -123,14 +125,14 @@ export function DashboardFallback({
     } else {
       setFilters((prev) => ({
         ...prev,
-        [col]: { operator: 'eq', value: val },
+        [col]: { operator: "eq", value: val },
       }));
     }
   }
 
   if (loading) {
     return (
-      <div className="card" role="status" style={{ marginTop: '20px' }}>
+      <div className="card" role="status" style={{ marginTop: "20px" }}>
         <p>Loading dashboard specification…</p>
       </div>
     );
@@ -138,7 +140,7 @@ export function DashboardFallback({
 
   if (error) {
     return (
-      <div className="card error" role="alert" style={{ marginTop: '20px' }}>
+      <div className="card error" role="alert" style={{ marginTop: "20px" }}>
         <p>{error}</p>
         {onClose && (
           <button className="secondary" onClick={onClose}>
@@ -157,56 +159,69 @@ export function DashboardFallback({
   const matchingRows = tableData?.total_matching_rows ?? 0;
 
   return (
-    <section className="card dashboard-fallback" aria-label="Dashboard" style={{ marginTop: '24px' }}>
+    <section
+      className="card dashboard-fallback"
+      aria-label="Dashboard"
+      style={{ marginTop: "24px" }}
+    >
       {/* Header & Status Notice */}
       <div className="section-title">
         <div>
           <span className="step">DASHBOARD / REVIEWED FALLBACK</span>
           <h2>{spec.title}</h2>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <span className="status" role="status">
             Standard layout active (Fallback mode)
           </span>
           {onClose && (
-            <button className="text-button" onClick={onClose} aria-label="Close dashboard">
+            <button
+              className="text-button"
+              onClick={onClose}
+              aria-label="Close dashboard"
+            >
               ✕ Close
             </button>
           )}
         </div>
       </div>
-      <p style={{ marginTop: '6px', color: '#59685e' }}>{spec.summary}</p>
+      <p style={{ marginTop: "6px", color: "#59685e" }}>{spec.summary}</p>
 
       {/* Filter Bar */}
       {filtersList.length > 0 && (
         <div
           className="filters-bar"
           style={{
-            background: '#edf2e8',
-            padding: '16px',
-            borderRadius: '8px',
-            marginTop: '16px',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '16px',
-            alignItems: 'flex-end',
+            background: "#edf2e8",
+            padding: "16px",
+            borderRadius: "8px",
+            marginTop: "16px",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "16px",
+            alignItems: "flex-end",
           }}
         >
           {filtersList.map((f, i) => {
-            const current = (filters[f.column]?.value as string) || '';
+            const current = (filters[f.column]?.value as string) || "";
             const filterInputId = `${baseId}-filter-${f.column}-${i}`;
             return (
-              <div key={f.column} style={{ minWidth: '160px', flex: '1' }}>
-                <label htmlFor={filterInputId} style={{ margin: '0 0 6px 0', fontSize: '12px' }}>
+              <div key={f.column} style={{ minWidth: "160px", flex: "1" }}>
+                <label
+                  htmlFor={filterInputId}
+                  style={{ margin: "0 0 6px 0", fontSize: "12px" }}
+                >
                   Filter: {f.label}
                 </label>
-                {f.type === 'category' && f.options ? (
+                {f.type === "category" && f.options ? (
                   <select
                     id={filterInputId}
                     aria-label={`Filter by ${f.label}`}
                     value={current}
-                    onChange={(e) => handleFilterChange(f.column, e.target.value)}
-                    style={{ padding: '8px', fontSize: '13px' }}
+                    onChange={(e) =>
+                      handleFilterChange(f.column, e.target.value)
+                    }
+                    style={{ padding: "8px", fontSize: "13px" }}
                   >
                     <option value="">All {f.label}</option>
                     {f.options.map((opt) => (
@@ -222,8 +237,10 @@ export function DashboardFallback({
                     type="text"
                     placeholder={`Filter ${f.label}`}
                     value={current}
-                    onChange={(e) => handleFilterChange(f.column, e.target.value)}
-                    style={{ padding: '8px', fontSize: '13px' }}
+                    onChange={(e) =>
+                      handleFilterChange(f.column, e.target.value)
+                    }
+                    style={{ padding: "8px", fontSize: "13px" }}
                   />
                 )}
               </div>
@@ -233,7 +250,7 @@ export function DashboardFallback({
             className="secondary"
             onClick={resetFilters}
             disabled={Object.keys(filters).length === 0}
-            style={{ padding: '8px 14px', fontSize: '12px', height: '38px' }}
+            style={{ padding: "8px 14px", fontSize: "12px", height: "38px" }}
           >
             Reset filters
           </button>
@@ -242,9 +259,12 @@ export function DashboardFallback({
 
       {/* Empty State warning */}
       {matchingRows === 0 && (
-        <div className="boundary" style={{ marginTop: '16px' }} role="status">
+        <div className="boundary" style={{ marginTop: "16px" }} role="status">
           <strong>No matching records.</strong>
-          <p>The active filters returned 0 rows. Reset or change your filter selections to view data.</p>
+          <p>
+            The active filters returned 0 rows. Reset or change your filter
+            selections to view data.
+          </p>
         </div>
       )}
 
@@ -252,30 +272,48 @@ export function DashboardFallback({
       <div
         className="kpis-grid"
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '16px',
-          margin: '24px 0',
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "16px",
+          margin: "24px 0",
         }}
       >
         {kpisList.map((kpi) => (
           <div
             key={kpi.id}
             style={{
-              background: '#fff',
-              border: '1px solid #dde3d8',
-              borderRadius: '8px',
-              padding: '16px',
+              background: "#fff",
+              border: "1px solid #dde3d8",
+              borderRadius: "8px",
+              padding: "16px",
             }}
           >
-            <span style={{ fontSize: '11px', color: '#657363', fontWeight: 700, textTransform: 'uppercase' }}>
+            <span
+              style={{
+                fontSize: "11px",
+                color: "#657363",
+                fontWeight: 700,
+                textTransform: "uppercase",
+              }}
+            >
               {kpi.label}
             </span>
-            <div style={{ fontSize: '24px', fontWeight: 600, color: '#214e42', margin: '8px 0 4px 0' }}>
-              {typeof kpi.value === 'number' ? kpi.value.toLocaleString() : kpi.value}
+            <div
+              style={{
+                fontSize: "24px",
+                fontWeight: 600,
+                color: "#214e42",
+                margin: "8px 0 4px 0",
+              }}
+            >
+              {typeof kpi.value === "number"
+                ? kpi.value.toLocaleString()
+                : kpi.value}
             </div>
             {kpi.description && (
-              <span style={{ fontSize: '11px', color: '#69776b', display: 'block' }}>
+              <span
+                style={{ fontSize: "11px", color: "#69776b", display: "block" }}
+              >
                 {kpi.description}
               </span>
             )}
@@ -287,10 +325,10 @@ export function DashboardFallback({
       <div
         className="charts-grid"
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '20px',
-          margin: '24px 0',
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: "20px",
+          margin: "24px 0",
         }}
       >
         {chartsList.map((chart) => {
@@ -300,30 +338,69 @@ export function DashboardFallback({
             <div
               key={chart.id}
               style={{
-                background: '#fff',
-                border: '1px solid #dde3d8',
-                borderRadius: '8px',
-                padding: '18px',
-                display: 'flex',
-                flexDirection: 'column',
+                background: "#fff",
+                border: "1px solid #dde3d8",
+                borderRadius: "8px",
+                padding: "18px",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <h3 style={{ fontSize: '16px', margin: '0 0 6px 0', color: '#244b3f' }}>{chart.title}</h3>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "16px",
+                    margin: "0 0 6px 0",
+                    color: "#244b3f",
+                  }}
+                >
+                  {chart.title}
+                </h3>
                 <span className="pill">{chart.chart_type.toUpperCase()}</span>
               </div>
-              <p style={{ fontSize: '12px', color: '#657363', margin: '0 0 14px 0' }}>{chart.summary}</p>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#657363",
+                  margin: "0 0 14px 0",
+                }}
+              >
+                {chart.summary}
+              </p>
 
               {/* Render SVG Chart */}
-              <div style={{ height: '180px', width: '100%', marginTop: 'auto' }}>
+              <div
+                style={{ height: "180px", width: "100%", marginTop: "auto" }}
+              >
                 {data.length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#7a8476', paddingTop: '60px', fontSize: '12px' }}>
+                  <p
+                    style={{
+                      textAlign: "center",
+                      color: "#7a8476",
+                      paddingTop: "60px",
+                      fontSize: "12px",
+                    }}
+                  >
                     No data available
                   </p>
-                ) : chart.chart_type === 'bar' ? (
-                  <svg width="100%" height="100%" viewBox="0 0 300 160" preserveAspectRatio="none">
+                ) : chart.chart_type === "bar" ? (
+                  <svg
+                    width="100%"
+                    height="100%"
+                    viewBox="0 0 300 160"
+                    preserveAspectRatio="none"
+                  >
                     {(() => {
-                      const maxVal = Math.max(...data.map((d) => (d.value as number) || 0), 1);
+                      const maxVal = Math.max(
+                        ...data.map((d) => (d.value as number) || 0),
+                        1,
+                      );
                       const barWidth = 260 / data.length;
                       return data.map((d, idx) => {
                         const val = (d.value as number) || 0;
@@ -352,10 +429,18 @@ export function DashboardFallback({
                       });
                     })()}
                   </svg>
-                ) : chart.chart_type === 'histogram' ? (
-                  <svg width="100%" height="100%" viewBox="0 0 300 160" preserveAspectRatio="none">
+                ) : chart.chart_type === "histogram" ? (
+                  <svg
+                    width="100%"
+                    height="100%"
+                    viewBox="0 0 300 160"
+                    preserveAspectRatio="none"
+                  >
                     {(() => {
-                      const maxVal = Math.max(...data.map((d) => (d.count as number) || 0), 1);
+                      const maxVal = Math.max(
+                        ...data.map((d) => (d.count as number) || 0),
+                        1,
+                      );
                       const barWidth = 260 / data.length;
                       return data.map((d, idx) => {
                         const val = (d.count as number) || 0;
@@ -377,7 +462,7 @@ export function DashboardFallback({
                               textAnchor="middle"
                               fill="#657363"
                             >
-                              {String(d.min ?? '')}
+                              {String(d.min ?? "")}
                             </text>
                           </g>
                         );
@@ -385,10 +470,17 @@ export function DashboardFallback({
                     })()}
                   </svg>
                 ) : (
-                  <svg width="100%" height="100%" viewBox="0 0 300 160" preserveAspectRatio="none">
+                  <svg
+                    width="100%"
+                    height="100%"
+                    viewBox="0 0 300 160"
+                    preserveAspectRatio="none"
+                  >
                     {/* Scatter or Line Plot */}
                     {(() => {
-                      const xs = data.map((d) => (typeof d.x === 'number' ? d.x : idxFromStr(d.x)));
+                      const xs = data.map((d) =>
+                        typeof d.x === "number" ? d.x : idxFromStr(d.x),
+                      );
                       const ys = data.map((d) => (d.y as number) || 0);
                       const minX = Math.min(...xs, 0);
                       const maxX = Math.max(...xs, 1);
@@ -407,10 +499,25 @@ export function DashboardFallback({
 
                       return (
                         <>
-                          <polyline fill="none" stroke="#214e42" strokeWidth="2" points={pts.join(' ')} />
+                          <polyline
+                            fill="none"
+                            stroke="#214e42"
+                            strokeWidth="2"
+                            points={pts.join(" ")}
+                          />
                           {data.map((_, i) => {
-                            const [x = '0', y = '0'] = (pts[i] ?? '').split(',');
-                            return <circle key={i} cx={x} cy={y} r="3" fill="#214e42" />;
+                            const [x = "0", y = "0"] = (pts[i] ?? "").split(
+                              ",",
+                            );
+                            return (
+                              <circle
+                                key={i}
+                                cx={x}
+                                cy={y}
+                                r="3"
+                                fill="#214e42"
+                              />
+                            );
                           })}
                         </>
                       );
@@ -419,7 +526,13 @@ export function DashboardFallback({
                 )}
               </div>
               {res?.sample_indicator && (
-                <span style={{ fontSize: '10px', color: '#9fa77b', marginTop: '6px' }}>
+                <span
+                  style={{
+                    fontSize: "10px",
+                    color: "#9fa77b",
+                    marginTop: "6px",
+                  }}
+                >
                   * Showing top 500 samples
                 </span>
               )}
@@ -429,33 +542,42 @@ export function DashboardFallback({
       </div>
 
       {/* Paginated Data Table */}
-      <div className="card listing" style={{ padding: '20px', border: '1px solid #dde3d8' }}>
+      <div
+        className="card listing"
+        style={{ padding: "20px", border: "1px solid #dde3d8" }}
+      >
         <div className="section-title">
           <h3>Filtered Data Preview ({matchingRows.toLocaleString()} rows)</h3>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <button
               className="secondary"
               disabled={tablePage === 0}
               onClick={() => setTablePage((p) => Math.max(0, p - 1))}
-              style={{ padding: '6px 12px', fontSize: '12px' }}
+              style={{ padding: "6px 12px", fontSize: "12px" }}
             >
               ← Prev
             </button>
-            <span style={{ fontSize: '12px', color: '#657363' }}>
-              Page {tablePage + 1} of {Math.max(1, Math.ceil(matchingRows / 50))}
+            <span style={{ fontSize: "12px", color: "#657363" }}>
+              Page {tablePage + 1} of{" "}
+              {Math.max(1, Math.ceil(matchingRows / 50))}
             </span>
             <button
               className="secondary"
               disabled={(tablePage + 1) * 50 >= matchingRows}
               onClick={() => setTablePage((p) => p + 1)}
-              style={{ padding: '6px 12px', fontSize: '12px' }}
+              style={{ padding: "6px 12px", fontSize: "12px" }}
             >
               Next →
             </button>
           </div>
         </div>
 
-        <div className="preview-scroll" tabIndex={0} role="region" aria-label="Dataset table preview">
+        <div
+          className="preview-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Dataset table preview"
+        >
           <table>
             <thead>
               <tr>
@@ -463,17 +585,22 @@ export function DashboardFallback({
                   <th
                     key={col}
                     scope="col"
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: "pointer" }}
                     onClick={() => {
                       if (sortBy === col) {
-                        setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+                        setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
                       } else {
                         setSortBy(col);
-                        setSortDirection('asc');
+                        setSortDirection("asc");
                       }
                     }}
                   >
-                    {col} {sortBy === col ? (sortDirection === 'asc' ? '▲' : '▼') : ''}
+                    {col}{" "}
+                    {sortBy === col
+                      ? sortDirection === "asc"
+                        ? "▲"
+                        : "▼"
+                      : ""}
                   </th>
                 ))}
               </tr>
@@ -481,7 +608,10 @@ export function DashboardFallback({
             <tbody>
               {!tableData?.data.length ? (
                 <tr>
-                  <td colSpan={spec.table.columns.length} style={{ textAlign: 'center', padding: '20px' }}>
+                  <td
+                    colSpan={spec.table.columns.length}
+                    style={{ textAlign: "center", padding: "20px" }}
+                  >
                     No rows to display.
                   </td>
                 </tr>
@@ -489,7 +619,9 @@ export function DashboardFallback({
                 tableData.data.map((row, idx) => (
                   <tr key={idx}>
                     {spec.table.columns.map((col) => (
-                      <td key={col}>{String((row as Record<string, unknown>)[col] ?? '—')}</td>
+                      <td key={col}>
+                        {String((row as Record<string, unknown>)[col] ?? "—")}
+                      </td>
                     ))}
                   </tr>
                 ))
@@ -503,9 +635,10 @@ export function DashboardFallback({
 }
 
 function idxFromStr(val: unknown): number {
-  if (typeof val === 'number') return val;
+  if (typeof val === "number") return val;
   const s = String(val);
   let hash = 0;
-  for (let i = 0; i < s.length; i++) hash = (hash << 5) - hash + s.charCodeAt(i);
+  for (let i = 0; i < s.length; i++)
+    hash = (hash << 5) - hash + s.charCodeAt(i);
   return Math.abs(hash) % 100;
 }

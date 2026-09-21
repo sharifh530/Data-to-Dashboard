@@ -12,7 +12,8 @@ CSV_DATA = b"""order_id,channel,category,quantity,unit_price,revenue
 6,Direct,Home,1,80,80
 """
 
-ALLOWED_COLUMNS = {"order_id", "channel", "category", "quantity", "unit_price", "revenue"}
+ALLOWED_COLUMNS = {"order_id", "channel",
+                   "category", "quantity", "unit_price", "revenue"}
 
 
 def test_query_broker_table():
@@ -45,7 +46,8 @@ def test_query_broker_filter_eq():
 def test_query_broker_filter_in():
     req = DashboardQueryRequest(
         query_id="table",
-        filters={"channel": FilterValue(operator="in", value=["Organic", "Referral"])},
+        filters={"channel": FilterValue(
+            operator="in", value=["Organic", "Referral"])},
     )
     res = execute_dashboard_query(CSV_DATA, req, ALLOWED_COLUMNS)
     assert res.total_matching_rows == 3
@@ -94,7 +96,8 @@ def test_query_broker_scatter():
 def test_query_broker_ignores_unallowed_column():
     req = DashboardQueryRequest(
         query_id="table",
-        filters={"malicious_col": FilterValue(operator="eq", value="drop table")},
+        filters={"malicious_col": FilterValue(
+            operator="eq", value="drop table")},
     )
     # Should not error or filter
     res = execute_dashboard_query(CSV_DATA, req, ALLOWED_COLUMNS)

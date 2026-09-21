@@ -113,7 +113,9 @@ def create_mock_profile() -> ProfileReport:
                 columns=cols,
                 row_count=240,
                 missing=[0] * 7,
-                preview=[["1", "2026-01-01", "Direct", "Apparel", "2", "50", "100"]] * 5,
+                preview=[["1", "2026-01-01", "Direct",
+                          "Apparel", "2", "50", "100"]]
+                * 5,
                 profile=profiles,
             )
         ],
@@ -135,7 +137,8 @@ def create_mock_cleaning() -> CleaningReport:
             original_name=c,
             clean_name=c,
             original_inferred_type="string",
-            clean_type="float64" if c in ("quantity", "unit_price", "revenue") else "object",
+            clean_type="float64" if c in (
+                "quantity", "unit_price", "revenue") else "object",
             null_count_before=0,
             null_count_after=0,
         )
@@ -205,8 +208,10 @@ def test_generate_dashboard_spec_with_baseline():
             test_fraction=0.2,
             seed=42,
         ),
-        reference=ModelMetrics(model_name="dummy", mae=228.24, fit_time_seconds=0.01),
-        candidate=ModelMetrics(model_name="ridge", mae=73.47, r2=0.88, fit_time_seconds=0.01),
+        reference=ModelMetrics(
+            model_name="dummy", mae=228.24, fit_time_seconds=0.01),
+        candidate=ModelMetrics(model_name="ridge", mae=73.47,
+                               r2=0.88, fit_time_seconds=0.01),
         comparison=BaselineComparison(
             candidate_better=True,
             better_model="ridge",

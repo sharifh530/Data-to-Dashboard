@@ -98,7 +98,8 @@ def execute_dashboard_query(
         {k: v for k, v in r.items() if k in allowed_columns} for r in all_rows
     ]
 
-    filtered_rows = _apply_filters(sanitized_rows, query.filters, allowed_columns)
+    filtered_rows = _apply_filters(
+        sanitized_rows, query.filters, allowed_columns)
     total_matching = len(filtered_rows)
 
     # 1. Table query
@@ -114,12 +115,14 @@ def execute_dashboard_query(
                 except ValueError:
                     return (1, val)
 
-            filtered_rows = sorted(filtered_rows, key=sort_key, reverse=reverse)
+            filtered_rows = sorted(
+                filtered_rows, key=sort_key, reverse=reverse)
 
         page_size = min(max(1, query.page_size), 100)
         offset = max(0, query.cursor)
-        sliced = filtered_rows[offset : offset + page_size]
-        next_cursor = str(offset + page_size) if offset + page_size < total_matching else None
+        sliced = filtered_rows[offset: offset + page_size]
+        next_cursor = str(offset + page_size) if offset + \
+            page_size < total_matching else None
         return DashboardQueryResponse(
             query_id="table",
             data=[dict(r) for r in sliced],

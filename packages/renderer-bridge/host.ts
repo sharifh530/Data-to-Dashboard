@@ -1,11 +1,11 @@
 import { isReady, RequestGate, type QueryRequest } from './protocol';
 
-/** Only a proof-of-concept bridge. Real data must be independently authorized by the API. */
+/** Opaque-origin sandboxed renderer bridge. */
 export function connectRenderer(options: {
   frame: HTMLIFrameElement;
   nonce: string;
   runId: string;
-  query: (request: QueryRequest) => unknown;
+  query: (request: QueryRequest) => Promise<unknown> | unknown;
   onConnected: () => void;
 }): () => void {
   const { frame, nonce, runId, query, onConnected } = options;
@@ -17,12 +17,31 @@ export function connectRenderer(options: {
     if (disposed || channel || event.source !== frame.contentWindow || event.origin !== 'null') return;
     if (!isReady(event.data, nonce)) return;
     channel = new MessageChannel();
-    channel.port1.onmessage = (message: MessageEvent<unknown>) => {
+    channel.port1.onmessage = async (message: MessageEvent<unknown>) => {
       if (!gate.accept(message.data)) return;
-      channel?.port1.postMessage({
-        version: 1, type: 'result', nonce, runId,
-        requestId: message.data.requestId, data: query(message.data),
-      });
+      const req = message.data;
+      try {
+        const result = await Promise.resolve(query(req));
+        if (disposed) return;
+        channel?.port1.postMessage({
+          version: 1,
+          type: 'result',
+          nonce,
+          runId,
+          requestId: req.requestId,
+          data: result,
+        });
+      } catch (err) {
+        if (disposed) return;
+        channel?.port1.postMessage({
+          version: 1,
+          type: 'error',
+          nonce,
+          runId,
+          requestId: req.requestId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
     };
     channel.port1.start();
     // Opaque-origin recipients require '*'; the exact window, nonce and port bind this instance.

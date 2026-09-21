@@ -131,6 +131,7 @@ Delivered Milestone B09: deterministic baseline evaluation workflow generation, 
 - Added support for `target_column` and `task_type` in `AnalysisRunCreate` contract and run creation endpoint (`runs.py`).
 
 Validation:
+
 - `tests/python/test_baseline.py`: 5 unit tests covering classification, regression, feature exclusion, and skip conditions passed.
 - `tests/python/test_runs.py`: lifecycle and artifact tests updated and passed.
 - `scripts/test-transformer.py`: end-to-end gVisor acceptance test passed in isolated container (Dummy MAE: 228.24 vs Ridge MAE: 73.47; verified script failure and invalid return type rejections).
@@ -149,6 +150,7 @@ Delivered Milestone B10: validated Dashboard Specification v1, allowlisted serve
 - Built accessible React Fallback UI (`apps/web/DashboardFallback.tsx`) with status banner, interactive filter bar, KPI cards, SVG Bar/Histogram/Line/Scatter charts, paginated sortable table, and integrated into workspace shell (`apps/web/main.tsx`).
 
 Validation:
+
 - `npm run check:python`: 31 files clean, Ruff format/lint and strict Mypy passed.
 - `npm run test:python`: 84 unit and integration tests passed (45 PostgreSQL parity skips).
 - `tests/python/test_dashboard_generator.py`: 2 tests covering spec limits and baseline model integration passed.
@@ -158,4 +160,3 @@ Validation:
 - `npm run contracts:check`: Generated contracts and TypeScript types in sync.
 - `npm run build`: Both renderer lab and workspace web UI built cleanly.
 - Next: Milestone B11 (Generated React pipeline).
-

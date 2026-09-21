@@ -21,9 +21,11 @@ from dtd_api.settings import ROOT, Settings
 def create_app(settings: Settings | None = None, engine: Engine | None = None) -> FastAPI:
     config = settings or Settings()
     if config.environment != "local":
-        raise RuntimeError("Only local foundation mode is implemented; hosted startup is disabled")
+        raise RuntimeError(
+            "Only local foundation mode is implemented; hosted startup is disabled")
     configured_engine = engine or (
-        make_engine(config.database_url.get_secret_value()) if config.database_url else None
+        make_engine(config.database_url.get_secret_value()
+                    ) if config.database_url else None
     )
 
     @asynccontextmanager
@@ -42,7 +44,8 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         docs_url=None,
         redoc_url=None,
         lifespan=lifespan,
-        responses={code: {"model": ErrorResponse} for code in (401, 403, 404, 409, 422, 503)},
+        responses={code: {"model": ErrorResponse}
+                   for code in (401, 403, 404, 409, 422, 503)},
     )
     app.state.settings = config
     app.state.engine = configured_engine
@@ -99,7 +102,8 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     def workspace() -> FileResponse:
         path = ROOT / "dist/web/index.html"
         if not path.is_file():
-            raise ApiError(503, "UI_NOT_BUILT", "Build the workspace with npm run build:web.")
+            raise ApiError(503, "UI_NOT_BUILT",
+                           "Build the workspace with npm run build:web.")
         return FileResponse(path)
 
     @app.get("/assets/{filename}", include_in_schema=False)
@@ -118,12 +122,13 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         response.headers["X-Request-ID"] = request.state.request_id
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Cache-Control"] = "no-store"
-        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
-        if request.url.path == "/" or request.url.path.startswith("/assets/"):
-            response.headers["Content-Security-Policy"] = (
-                "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; "
-                "img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
-            )
+        if "Content-Security-Policy" not in response.headers:
+            response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+            if request.url.path == "/" or request.url.path.startswith("/assets/"):
+                response.headers["Content-Security-Policy"] = (
+                    "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; "
+                    "img-src 'self'; frame-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+                )
         return response
 
     @app.get("/health/live", response_model=Health)

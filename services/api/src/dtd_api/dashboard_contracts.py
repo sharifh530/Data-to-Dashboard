@@ -30,7 +30,8 @@ class FilterSpec(Contract):
     column: str
     label: str
     type: Literal["category", "range", "date"]
-    allowed_operators: list[Literal["eq", "in", "between", "gte", "lte"]] = ["eq", "in"]
+    allowed_operators: list[Literal["eq", "in",
+                                    "between", "gte", "lte"]] = ["eq", "in"]
     options: list[str] | None = None
     min_val: float | None = None
     max_val: float | None = None
@@ -81,5 +82,6 @@ class DashboardQueryResponse(Contract):
 class DashboardView(Contract):
     run_id: UUID
     spec: DashboardSpec
+    bundle_artifact_id: UUID | None = None
     render_mode: Literal["generated", "fallback"] = "fallback"
     status: str = "ready"

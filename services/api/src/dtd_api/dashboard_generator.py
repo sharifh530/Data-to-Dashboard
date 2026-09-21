@@ -277,7 +277,8 @@ def generate_dashboard_spec(
             warnings.append(f"Baseline skipped: {baseline_obj.skip_reason}")
 
     # Summary
-    summary_parts = [f"Analyzed {cleaned_rows} rows across {len(clean_columns)} columns."]
+    summary_parts = [
+        f"Analyzed {cleaned_rows} rows across {len(clean_columns)} columns."]
     if dup_removed > 0:
         summary_parts.append(f"Removed {dup_removed} duplicate records.")
     if baseline_obj and baseline_obj.status == "ready":

@@ -138,19 +138,25 @@ def download_artifact(
     principal: AUTH,
     db: DB,
 ) -> Response:
-    artifact = owned_artifact(db, str(project_id), str(run_id), str(artifact_id), principal.user.id)
+    artifact = owned_artifact(db, str(project_id), str(
+        run_id), str(artifact_id), principal.user.id)
     file_path = ARTIFACTS_DIR / artifact.private_key
     if not file_path.exists():
         raise ApiError(404, "NOT_FOUND", "Artifact content missing.")
     data = file_path.read_bytes()
     if hashlib.sha256(data).hexdigest() != artifact.sha256:
-        raise ApiError(500, "CORRUPT_ARTIFACT", "Artifact failed checksum integrity check.")
+        raise ApiError(500, "CORRUPT_ARTIFACT",
+                       "Artifact failed checksum integrity check.")
 
     media_type = "text/csv" if artifact.kind == "cleaned_data" else "application/octet-stream"
     if artifact.kind in {"cleaning_report", "baseline_report", "dashboard_spec"}:
         media_type = "application/json"
     elif artifact.kind in {"generated_script", "baseline_script"}:
         media_type = "text/x-python"
+    elif artifact.kind == "dashboard_bundle":
+        media_type = "application/javascript"
+    elif artifact.kind == "dashboard_script":
+        media_type = "text/plain"
 
     filename = Path(artifact.private_key).name
     return Response(

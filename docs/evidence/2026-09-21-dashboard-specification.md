@@ -1,6 +1,7 @@
 # Milestone B10 Evidence: Dashboard Specification, Query Broker, and Fallback UI
 
 ## Overview
+
 Milestone B10 implements the complete Dashboard Specification v1, the allowlisted server query broker, and the accessible React fallback UI. This connects the isolated data transformation pipeline (Milestone B08) and baseline model evaluation (Milestone B09) directly to visual analysis.
 
 ## Key Delivered Features
@@ -59,4 +60,5 @@ Milestone B10 implements the complete Dashboard Specification v1, the allowliste
 - `npm run build`: Both renderer lab and workspace web UI compiled cleanly.
 
 ## Next Concrete Action
+
 Proceed to **Milestone B11 (Generated React compile/render pipeline)**: Isolated compilation of LLM-generated React components, iframe sandbox execution, CSP enforcement, and bridge communication with the query broker.
