@@ -147,7 +147,7 @@ def download_artifact(
         raise ApiError(500, "CORRUPT_ARTIFACT", "Artifact failed checksum integrity check.")
 
     media_type = "text/csv" if artifact.kind == "cleaned_data" else "application/octet-stream"
-    if artifact.kind in {"cleaning_report", "baseline_report"}:
+    if artifact.kind in {"cleaning_report", "baseline_report", "dashboard_spec"}:
         media_type = "application/json"
     elif artifact.kind in {"generated_script", "baseline_script"}:
         media_type = "text/x-python"

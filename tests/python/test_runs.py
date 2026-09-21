@@ -380,16 +380,18 @@ def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
         fake_transformer_image = "sha256:" + "a" * 64
         assert work_once(db_engine, fake_transformer_image)  # clean_dataset
         assert work_once(db_engine, fake_transformer_image)  # train_baseline
+        assert work_once(db_engine, fake_transformer_image)  # plan_dashboard
 
         run_data = client.get(f"/api/v1/runs/{run_id}").json()
         assert run_data["status"] == "succeeded"
         assert "clean_dataset" in run_data["completed_stages"]
         assert "train_baseline" in run_data["completed_stages"]
-        assert run_data["result"]["status"] == "ready"
+        assert "plan_dashboard" in run_data["completed_stages"]
+        assert run_data["result"]["schema_version"] == "1"
 
         art_url = f"/api/v1/projects/{project}/runs/{run_id}/artifacts"
         artifacts = client.get(art_url).json()
-        assert len(artifacts) == 5
+        assert len(artifacts) == 6
         kinds = {a["kind"] for a in artifacts}
         assert kinds == {
             "cleaned_data",
@@ -397,7 +399,25 @@ def test_analysis_run_lifecycle_and_artifacts(db_engine, monkeypatch):
             "generated_script",
             "baseline_report",
             "baseline_script",
+            "dashboard_spec",
         }
+
+        # Test dashboard spec endpoint
+        dash_res = client.get(f"/api/v1/runs/{run_id}/dashboard")
+        assert dash_res.status_code == 200
+        dash_data = dash_res.json()
+        assert dash_data["render_mode"] == "fallback"
+        assert dash_data["spec"]["schema_version"] == "1"
+        assert len(dash_data["spec"]["kpis"]) > 0
+
+        # Test dashboard query endpoint
+        q_res = client.post(
+            f"/api/v1/runs/{run_id}/queries",
+            json={"query_id": "table", "cursor": 0, "page_size": 10},
+        )
+        assert q_res.status_code == 200
+        assert q_res.json()["query_id"] == "table"
+        assert len(q_res.json()["data"]) == 1
 
         cleaned_art = next(a for a in artifacts if a["kind"] == "cleaned_data")
         dl_res = client.get(f"{art_url}/{cleaned_art['id']}/download")

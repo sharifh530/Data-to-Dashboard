@@ -136,3 +136,26 @@ Validation:
 - `scripts/test-transformer.py`: end-to-end gVisor acceptance test passed in isolated container (Dummy MAE: 228.24 vs Ridge MAE: 73.47; verified script failure and invalid return type rejections).
 - `npm run check`: lint, format, typecheck (mypy), protocol tests, 74 Python tests passed cleanly.
 - Milestone committed (`78c8e7b`) and pushed to remote `main`. Next: B10 Analysis rendering & layout.
+
+## 2026-09-21 — Dashboard Specification, Query Broker, and Fallback UI (Milestone B10)
+
+Delivered Milestone B10: validated Dashboard Specification v1, allowlisted server-side Query Broker with 500-point chart capping and 100-row table pagination, stage progression `plan_dashboard`, and accessible reviewed React Fallback UI.
+
+- Defined contracts (`dashboard_contracts.py`): `DashboardSpec`, `KpiSpec`, `ChartSpec`, `FilterSpec`, `TableSpec`, `DashboardQueryRequest`, `DashboardQueryResponse`, and `DashboardView`.
+- Implemented deterministic specification generator (`dashboard_generator.py`) conforming to v1 limits (<=6 KPIs, <=6 charts, <=4 filters, table spec) based on `ProfileReport`, `CleaningReport`, and `BaselineReport`. Matches charts to actual data types and forbids fabricated time series if dates are absent.
+- Extended run state machine (`run_engine.py`) with `plan_dashboard` stage, generating the spec artifact (`kind="dashboard_spec"`), checkpointing the summary, and creating the `Dashboard` database record with `render_mode="fallback"`.
+- Implemented allowlisted server query broker (`query_broker.py`) using pure Python standard library to filter, aggregate, bin, and paginate over `cleaned.csv` artifacts without executing client-provided code.
+- Added API routes (`runs.py`): `GET /runs/{run_id}/dashboard` and `POST /runs/{run_id}/queries`.
+- Built accessible React Fallback UI (`apps/web/DashboardFallback.tsx`) with status banner, interactive filter bar, KPI cards, SVG Bar/Histogram/Line/Scatter charts, paginated sortable table, and integrated into workspace shell (`apps/web/main.tsx`).
+
+Validation:
+- `npm run check:python`: 31 files clean, Ruff format/lint and strict Mypy passed.
+- `npm run test:python`: 84 unit and integration tests passed (45 PostgreSQL parity skips).
+- `tests/python/test_dashboard_generator.py`: 2 tests covering spec limits and baseline model integration passed.
+- `tests/python/test_query_broker.py`: 8 tests covering filtering, chart capping, binning, and security passed.
+- `tests/python/test_runs.py`: 3-stage lifecycle test passed.
+- `npm run test:postgres`: All 129 tests passed against local PostgreSQL 17 engine (0 failures, 0 skips).
+- `npm run contracts:check`: Generated contracts and TypeScript types in sync.
+- `npm run build`: Both renderer lab and workspace web UI built cleanly.
+- Next: Milestone B11 (Generated React pipeline).
+

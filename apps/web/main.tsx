@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import type { components } from '../../packages/contracts/api';
 import './style.css';
 import { Inspection } from './Inspection';
+import { DashboardFallback } from './DashboardFallback';
 
 type Project = components['schemas']['ProjectView'];
 type Dataset = components['schemas']['StoredDataset'];
@@ -30,6 +31,7 @@ function App() {
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploadKey, setUploadKey] = useState(crypto.randomUUID());
+  const [dashboardRunId, setDashboardRunId] = useState<string | null>(null);
 
   async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     const response = await fetch('/api/v1' + path, { ...init, credentials: 'same-origin',
@@ -129,10 +131,11 @@ function App() {
             {loading ? <p role="status">Loading project…</p> : !datasets.items.length ? <p className="empty">No files yet. Your first upload will appear here.</p> : datasets.items.map(dataset => <article className="data-row" key={dataset.id}><div><strong>{dataset.format.toUpperCase()} dataset · {dataset.id.slice(0, 8)}</strong><p>{dataset.size_bytes < 1024 ? `${dataset.size_bytes} bytes` : `${(dataset.size_bytes / 1024).toFixed(1)} KiB`} · {dataset.inspection_status ? 'Inspection ' + dataset.inspection_status : 'Awaiting isolated inspection'}</p><details><summary>Checksum and identifier</summary><code>{dataset.sha256}</code><code>{dataset.id}</code></details><Inspection id={dataset.id} csrf={session.csrf_token} format={dataset.format}/></div><a className="download" href={`/api/v1/datasets/${dataset.id}/raw`}>Download original ↓</a></article>)}
             {datasets.next_cursor && <button className="secondary" disabled={busy} onClick={() => void act(async () => { const next = await api<Page<Dataset>>(`/projects/${projectId}/datasets?cursor=${datasets.next_cursor}`); setDatasets({ items: [...datasets.items, ...next.items], next_cursor: next.next_cursor }); })}>More datasets</button>}
           </section>
-          <section className="card listing"><h2>Run history <span className="pill">SAMPLE DATA ONLY</span></h2>{!loading && !runs.items.length && <p className="empty">No runs yet. Try the sample workflow above.</p>}
-            {runs.items.map(run => <article className="run" key={run.id}><div className="section-title"><strong>Sales sample · {run.id.slice(0, 8)}</strong><span className="status" role="status">{label(run.status)}</span></div><ol className="stages">{stages.map(stage => <li key={stage} className={run.completed_stages.includes(stage) ? 'complete' : ''}>{run.completed_stages.includes(stage) ? '✓ ' : '○ '}{label(stage)}</li>)}</ol>{run.status === 'queued' && <p className="muted">Waiting for the local worker.</p>}{!terminal.has(run.status) && <button className="secondary" disabled={busy || run.status === 'cancelling'} onClick={() => void act(async () => { await api(`/runs/${run.id}/cancel`, { method: 'POST' }); setRefresh(n => n + 1); })}>Cancel run</button>}{run.result && <p className="result">Sample revenue: <strong>{String(run.result.revenue)}</strong> · Sample orders: <strong>{String(run.result.orders)}</strong></p>}</article>)}
+          <section className="card listing"><h2>Run history</h2>{!loading && !runs.items.length && <p className="empty">No runs yet. Try the sample workflow above.</p>}
+            {runs.items.map(run => <article className="run" key={run.id}><div className="section-title"><strong>{run.mode === 'analysis' ? 'Analysis Run' : 'Sales sample'} · {run.id.slice(0, 8)}</strong><span className="status" role="status">{label(run.status)}</span></div><ol className="stages">{(run.mode === 'analysis' ? ['clean_dataset', 'train_baseline', 'plan_dashboard'] : stages).map(stage => <li key={stage} className={run.completed_stages.includes(stage) ? 'complete' : ''}>{run.completed_stages.includes(stage) ? '✓ ' : '○ '}{label(stage)}</li>)}</ol>{run.status === 'queued' && <p className="muted">Waiting for the local worker.</p>}{!terminal.has(run.status) && <button className="secondary" disabled={busy || run.status === 'cancelling'} onClick={() => void act(async () => { await api(`/runs/${run.id}/cancel`, { method: 'POST' }); setRefresh(n => n + 1); })}>Cancel run</button>}{run.completed_stages.includes('plan_dashboard') && <button className="secondary" style={{ marginLeft: '8px' }} onClick={() => setDashboardRunId(run.id)}>View Dashboard →</button>}{run.result && <p className="result">Result: {run.result.title ? String(run.result.title) : `Sample revenue: ${String(run.result.revenue)} · Sample orders: ${String(run.result.orders)}`}</p>}</article>)}
             {runs.next_cursor && <button className="secondary" disabled={busy} onClick={() => void act(async () => { const next = await api<Page<Run>>(`/projects/${projectId}/runs?cursor=${runs.next_cursor}`); setRuns({ items: [...runs.items, ...next.items], next_cursor: next.next_cursor }); })}>More runs</button>}
           </section>
+          {dashboardRunId && <DashboardFallback runId={dashboardRunId} csrf={session.csrf_token} onClose={() => setDashboardRunId(null)} />}
         </>}
       </>}
       <footer>DATA TO DASHBOARD <span>From raw data to understanding.</span></footer>

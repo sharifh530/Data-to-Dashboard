@@ -314,6 +314,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/runs/{run_id}/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard */
+        get: operations["get_dashboard_api_v1_projects__project_id__runs__run_id__dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/runs/{run_id}/queries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Query Dashboard */
+        post: operations["query_dashboard_api_v1_projects__project_id__runs__run_id__queries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}": {
         parameters: {
             query?: never;
@@ -348,6 +382,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard */
+        get: operations["get_dashboard_api_v1_runs__run_id__dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/events": {
         parameters: {
             query?: never;
@@ -359,6 +410,23 @@ export interface paths {
         get: operations["events_api_v1_runs__run_id__events_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/queries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Query Dashboard */
+        post: operations["query_dashboard_api_v1_runs__run_id__queries_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -493,6 +561,29 @@ export interface components {
              */
             uploads_enabled: false;
         };
+        /** ChartSpec */
+        ChartSpec: {
+            /**
+             * Chart Type
+             * @enum {string}
+             */
+            chart_type: "bar" | "line" | "scatter" | "histogram";
+            /** Id */
+            id: string;
+            /** Query Id */
+            query_id: string;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Title */
+            title: string;
+            /** X Axis */
+            x_axis: string;
+            /** Y Axis */
+            y_axis: string;
+        };
         /** ColumnProfile */
         ColumnProfile: {
             /** Distinct */
@@ -509,6 +600,97 @@ export interface components {
             numeric_min: string | null;
             /** Top Values */
             top_values: components["schemas"]["TopValue"][];
+        };
+        /** DashboardQueryRequest */
+        DashboardQueryRequest: {
+            /**
+             * Cursor
+             * @default 0
+             */
+            cursor: number;
+            /** Filters */
+            filters?: {
+                [key: string]: components["schemas"]["FilterValue"];
+            };
+            /**
+             * Page Size
+             * @default 50
+             */
+            page_size: number;
+            /** Query Id */
+            query_id: string;
+            /** Sort By */
+            sort_by?: string | null;
+            /**
+             * Sort Direction
+             * @default asc
+             * @enum {string}
+             */
+            sort_direction: "asc" | "desc";
+        };
+        /** DashboardQueryResponse */
+        DashboardQueryResponse: {
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            }[];
+            /** Next Cursor */
+            next_cursor?: string | null;
+            /** Query Id */
+            query_id: string;
+            /**
+             * Sample Indicator
+             * @default false
+             */
+            sample_indicator: boolean;
+            /** Total Matching Rows */
+            total_matching_rows: number;
+        };
+        /** DashboardSpec */
+        DashboardSpec: {
+            /** Charts */
+            charts?: components["schemas"]["ChartSpec"][];
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /** Filters */
+            filters?: components["schemas"]["FilterSpec"][];
+            /** Kpis */
+            kpis?: components["schemas"]["KpiSpec"][];
+            /** Model Report Ref */
+            model_report_ref?: string | null;
+            /**
+             * Schema Version
+             * @default 1
+             * @constant
+             */
+            schema_version: "1";
+            /** Summary */
+            summary: string;
+            table: components["schemas"]["TableSpec"];
+            /** Title */
+            title: string;
+            /** Warnings */
+            warnings?: string[];
+        };
+        /** DashboardView */
+        DashboardView: {
+            /**
+             * Render Mode
+             * @default fallback
+             * @enum {string}
+             */
+            render_mode: "generated" | "fallback";
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            spec: components["schemas"]["DashboardSpec"];
+            /**
+             * Status
+             * @default ready
+             */
+            status: string;
         };
         /** DatasetPage */
         DatasetPage: {
@@ -552,6 +734,42 @@ export interface components {
         Exchange: {
             /** Token */
             token: string;
+        };
+        /** FilterSpec */
+        FilterSpec: {
+            /**
+             * Allowed Operators
+             * @default [
+             *       "eq",
+             *       "in"
+             *     ]
+             */
+            allowed_operators: ("eq" | "in" | "between" | "gte" | "lte")[];
+            /** Column */
+            column: string;
+            /** Label */
+            label: string;
+            /** Max Val */
+            max_val?: number | null;
+            /** Min Val */
+            min_val?: number | null;
+            /** Options */
+            options?: string[] | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "category" | "range" | "date";
+        };
+        /** FilterValue */
+        FilterValue: {
+            /**
+             * Operator
+             * @enum {string}
+             */
+            operator: "eq" | "in" | "between" | "gte" | "lte";
+            /** Value */
+            value: unknown;
         };
         /** Health */
         Health: {
@@ -620,6 +838,26 @@ export interface components {
             selected_table: string | null;
             /** Status */
             status: string;
+        };
+        /** KpiSpec */
+        KpiSpec: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Format
+             * @default number
+             * @enum {string}
+             */
+            format: "number" | "currency" | "percent" | "text";
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Value */
+            value: number | string;
         };
         /** ProfileReport */
         ProfileReport: {
@@ -802,6 +1040,24 @@ export interface components {
             preview: (string | null)[][];
             /** Row Count */
             row_count: number;
+        };
+        /** TableSpec */
+        TableSpec: {
+            /** Columns */
+            columns: string[];
+            /** Default Sort */
+            default_sort?: string | null;
+            /**
+             * Page Size
+             * @default 50
+             */
+            page_size: number;
+            /**
+             * Sort Direction
+             * @default asc
+             * @enum {string}
+             */
+            sort_direction: "asc" | "desc";
         };
         /** TopValue */
         TopValue: {
@@ -2525,6 +2781,164 @@ export interface operations {
             };
         };
     };
+    get_dashboard_api_v1_projects__project_id__runs__run_id__dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                project_id: string | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardView"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    query_dashboard_api_v1_projects__project_id__runs__run_id__queries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                project_id: string | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardQueryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardQueryResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     detail_api_v1_runs__run_id__get: {
         parameters: {
             query?: never;
@@ -2677,6 +3091,84 @@ export interface operations {
             };
         };
     };
+    get_dashboard_api_v1_runs__run_id__dashboard_get: {
+        parameters: {
+            query?: {
+                project_id?: string | null;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardView"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     events_api_v1_runs__run_id__events_get: {
         parameters: {
             query?: {
@@ -2699,6 +3191,88 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    query_dashboard_api_v1_runs__run_id__queries_post: {
+        parameters: {
+            query?: {
+                project_id?: string | null;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardQueryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardQueryResponse"];
                 };
             };
             /** @description Unauthorized */

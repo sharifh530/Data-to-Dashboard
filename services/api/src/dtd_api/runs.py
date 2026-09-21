@@ -13,11 +13,20 @@ from sqlalchemy import Engine, delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from dtd_api.artifacts import ARTIFACTS_DIR
 from dtd_api.auth import AUTH, DB, MUTATION, digest
 from dtd_api.contracts import Contract
+from dtd_api.dashboard_contracts import (
+    DashboardQueryRequest,
+    DashboardQueryResponse,
+    DashboardSpec,
+    DashboardView,
+)
 from dtd_api.errors import ApiError
 from dtd_api.models import (
+    Artifact,
     AuditEvent,
+    Dashboard,
     Dataset,
     DatasetVersion,
     IdempotencyRecord,
@@ -32,6 +41,7 @@ from dtd_api.models import (
     now,
 )
 from dtd_api.projects import KEY, owned
+from dtd_api.query_broker import execute_dashboard_query
 from dtd_api.run_engine import TERMINAL, emit, terminal, utc
 
 router = APIRouter(prefix="/api/v1", tags=["Synthetic runs"])
@@ -310,6 +320,94 @@ def history(
 @router.get("/runs/{run_id}", response_model=RunView)
 def detail(run_id: UUID, principal: AUTH, db: DB) -> RunView:
     return view(owned_run(db, str(run_id), principal.user.id))
+
+
+@router.get("/runs/{run_id}/dashboard", response_model=DashboardView)
+@router.get("/projects/{project_id}/runs/{run_id}/dashboard", response_model=DashboardView)
+def get_dashboard(
+    run_id: UUID,
+    principal: AUTH,
+    db: DB,
+    project_id: UUID | None = None,
+) -> DashboardView:
+    run = owned_run(db, str(run_id), principal.user.id)
+    if project_id and run.project_id != str(project_id):
+        raise ApiError(404, "NOT_FOUND", "Run not found in project.")
+
+    dash = db.scalar(select(Dashboard).where(Dashboard.run_id == str(run_id)))
+    if dash is None:
+        spec_dict = run.checkpoint.get("plan_dashboard")
+        if spec_dict and isinstance(spec_dict, dict):
+            spec = DashboardSpec.model_validate(spec_dict)
+            return DashboardView(
+                run_id=UUID(run.id),
+                spec=spec,
+                render_mode="fallback",
+                status="ready",
+            )
+        raise ApiError(404, "NOT_FOUND", "Dashboard not ready for this run.")
+
+    artifact = db.get(Artifact, dash.spec_artifact_id)
+    if artifact is None or artifact.deletion_state != "active":
+        raise ApiError(404, "NOT_FOUND", "Dashboard specification artifact missing.")
+
+    file_path = ARTIFACTS_DIR / artifact.private_key
+    if not file_path.exists():
+        raise ApiError(404, "NOT_FOUND", "Dashboard specification file missing.")
+
+    try:
+        spec = DashboardSpec.model_validate_json(file_path.read_text("utf-8"))
+    except Exception as exc:
+        raise ApiError(500, "INVALID_SPEC", "Failed to parse dashboard specification.") from exc
+
+    return DashboardView(
+        run_id=UUID(run.id),
+        spec=spec,
+        render_mode=dash.render_mode,  # type: ignore[arg-type]
+        status="ready" if run.status in TERMINAL else "generating",
+    )
+
+
+@router.post("/runs/{run_id}/queries", response_model=DashboardQueryResponse)
+@router.post("/projects/{project_id}/runs/{run_id}/queries", response_model=DashboardQueryResponse)
+def query_dashboard(
+    run_id: UUID,
+    body: DashboardQueryRequest,
+    principal: AUTH,
+    db: DB,
+    project_id: UUID | None = None,
+) -> DashboardQueryResponse:
+    run = owned_run(db, str(run_id), principal.user.id)
+    if project_id and run.project_id != str(project_id):
+        raise ApiError(404, "NOT_FOUND", "Run not found in project.")
+
+    cleaned_artifact = db.scalar(
+        select(Artifact).where(
+            Artifact.run_id == str(run_id),
+            Artifact.kind == "cleaned_data",
+            Artifact.deletion_state == "active",
+        )
+    )
+    if cleaned_artifact is None:
+        raise ApiError(404, "NOT_FOUND", "Cleaned dataset artifact not found for this run.")
+
+    file_path = ARTIFACTS_DIR / cleaned_artifact.private_key
+    if not file_path.exists():
+        raise ApiError(404, "NOT_FOUND", "Cleaned dataset content missing.")
+
+    csv_bytes = file_path.read_bytes()
+
+    cleaning_output = run.checkpoint.get("clean_dataset", {})
+    if isinstance(cleaning_output, dict) and "lineage" in cleaning_output:
+        allowed_columns = {
+            str(col["clean_name"])
+            for col in cleaning_output["lineage"]
+            if isinstance(col, dict) and "clean_name" in col
+        }
+    else:
+        allowed_columns = set()
+
+    return execute_dashboard_query(csv_bytes, body, allowed_columns)
 
 
 @router.post("/runs/{run_id}/cancel", response_model=RunView)

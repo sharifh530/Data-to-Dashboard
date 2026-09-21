@@ -3,6 +3,7 @@
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy import Engine, and_, func, or_, select
@@ -11,8 +12,10 @@ from sqlalchemy.orm import Session
 from dtd_api.artifacts import store_artifact
 from dtd_api.baseline_generator import generate_baseline_workflow
 from dtd_api.cleaning_generator import generate_cleaning_workflow
+from dtd_api.dashboard_generator import generate_dashboard_spec
 from dtd_api.inspection_contracts import ProfileReport
 from dtd_api.models import (
+    Dashboard,
     Dataset,
     DatasetVersion,
     Outbox,
@@ -24,13 +27,14 @@ from dtd_api.models import (
     StageAttempt,
     User,
     WorkItem,
+    new_id,
     now,
 )
 from dtd_api.transformations import run_isolated_transform
 
 TERMINAL = {"succeeded", "succeeded_with_warnings", "failed", "cancelled"}
 STAGES = ("profile_fixture", "summarize_fixture", "publish_fixture")
-ANALYSIS_STAGES = ("clean_dataset", "train_baseline")
+ANALYSIS_STAGES = ("clean_dataset", "train_baseline", "plan_dashboard")
 LEASE_SECONDS = 5
 MAX_ATTEMPTS = 3
 DEADLINE_SECONDS = 600
@@ -546,6 +550,107 @@ def execute_train_baseline(engine: Engine, claim: Claim, transformer_image: str 
         return True
 
 
+def execute_plan_dashboard(engine: Engine, claim: Claim) -> bool:
+    with Session(engine) as db:
+        run = db.get(Run, claim.run_id)
+        if run is None:
+            return False
+        project_id = run.project_id
+        dataset_version_id = run.dataset_version_id
+        target_column = run.config.get("target_column")
+        checkpoint = run.checkpoint or {}
+
+        version = db.get(DatasetVersion, dataset_version_id)
+        if version is None:
+            with db.begin():
+                run_up = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+                job = db.get(WorkItem, claim.run_id)
+                if run_up and job:
+                    terminal(db, run_up, job, "failed", "Dataset version not found.")
+            return True
+
+        profile = db.get(Profile, version.id)
+        if profile is None or profile.status != "ready" or profile.report is None:
+            with db.begin():
+                run_up = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+                job = db.get(WorkItem, claim.run_id)
+                if run_up and job:
+                    terminal(db, run_up, job, "failed", "Profile not ready.")
+            return True
+
+        profile_report = ProfileReport.model_validate(profile.report)
+        cleaning_report_dict = cast(dict[str, Any], checkpoint.get("clean_dataset", {}))
+        baseline_report_dict = cast(dict[str, Any] | None, checkpoint.get("train_baseline"))
+
+    # Generate dashboard spec
+    spec = generate_dashboard_spec(
+        dataset_version_id=str(dataset_version_id),
+        profile_report=profile_report,
+        cleaning_report=cleaning_report_dict,
+        baseline_report=baseline_report_dict,
+        target_column=str(target_column) if target_column else None,
+    )
+
+    spec_bytes = spec.model_dump_json().encode("utf-8")
+
+    with Session(engine) as db, db.begin():
+        run = db.scalar(select(Run).where(Run.id == claim.run_id).with_for_update())
+        job = db.get(WorkItem, claim.run_id)
+        if run and job and run.status == "cancelling" and job.token == claim.token:
+            terminal(db, run, job, "cancelled", "Worker acknowledged cancellation")
+            return False
+        if not valid_claim(run, job, claim):
+            return False
+        assert run is not None and job is not None
+
+        # Store dashboard spec artifact
+        spec_artifact = store_artifact(
+            db,
+            project_id,
+            claim.run_id,
+            "dashboard_spec",
+            "dashboard_spec.json",
+            spec_bytes,
+        )
+
+        # Upsert Dashboard model record
+        dash = db.scalar(select(Dashboard).where(Dashboard.run_id == claim.run_id))
+        if dash is None:
+            dash = Dashboard(
+                id=new_id(),
+                run_id=claim.run_id,
+                spec_artifact_id=spec_artifact.id,
+                render_mode="fallback",
+            )
+            db.add(dash)
+        else:
+            dash.spec_artifact_id = spec_artifact.id
+            dash.render_mode = "fallback"
+
+        output = spec.model_dump()
+        attempt = db.get(StageAttempt, claim.attempt_id)
+        assert attempt is not None
+        attempt.status = "succeeded"
+        run.checkpoint = {**run.checkpoint, claim.stage: output}
+        emit(db, run, "stage_completed", {"stage": claim.stage})
+        job.token = None
+        job.lease_expires_at = None
+
+        if claim.stage == ANALYSIS_STAGES[-1]:
+            run.result = output
+            terminal(
+                db,
+                run,
+                job,
+                "succeeded",
+                "Dataset analysis completed.",
+            )
+        else:
+            job.state = "pending"
+
+        return True
+
+
 def work_once(engine: Engine, transformer_image: str | None = None) -> bool:
     dispatched = dispatch_one(engine)
     claim = claim_one(engine)
@@ -558,4 +663,6 @@ def work_once(engine: Engine, transformer_image: str | None = None) -> bool:
             execute_clean_dataset(engine, claim, transformer_image)
         elif claim.stage == "train_baseline":
             execute_train_baseline(engine, claim, transformer_image)
+        elif claim.stage == "plan_dashboard":
+            execute_plan_dashboard(engine, claim)
     return True

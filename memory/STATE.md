@@ -13,17 +13,19 @@ Last updated: 2026-09-21
 - PostgreSQL outbox/leases/checkpoints/SSE and cancellation for runs. Generated contracts, migrations, locked dependencies and checks. Separate reviewed renderer lab on 4173/4174.
 - dtd-sandbox WSL2 Ubuntu, Docker/runsc; pinned inspector and transformer images.
 
+- NEW (B10): Validated Dashboard Specification v1 generator, allowlisted server-side Query Broker with 500-pt chart caps and 100-row table pagination, stage progression `plan_dashboard`, and accessible reviewed React Fallback UI with SVG charts and interactive filters.
+
 ## Validation
 
-September 21: `npm run test:postgres` 114 passed (0 failures, 0 skips); `npm run check` passed 4 JS tests, 69 Python passed (45 PG skipped), lint, format, type checks, contracts, and builds passed cleanly. Real gVisor acceptance suite: transformer passed on `samples/synthetic-sales-messy.csv` (245 rows -> 240 rows, 5 duplicates dropped, whitespace stripped), verified safe rejection of failing scripts and invalid return types. Evidence: docs/evidence/2026-09-21-cleaning-provenance.md.
+September 21: `npm run test:postgres` 129 passed (0 failures, 0 skips); `npm run check` passed 4 JS tests, 84 Python passed (45 PG skipped), lint, format, type checks, contracts, and builds passed cleanly. Evidence: docs/evidence/2026-09-21-dashboard-specification.md.
 
 ## Limitations and next concrete action
 
-B01/B05/B07/B12 remain partial; B08 is complete. Current Phase: Milestone B09 (Baseline evaluation)
-Status: Completed baseline execution and unit testing! The core API gracefully handles classification/regression tasks via deterministically generated baseline `scikit-learn` scripts executed securely in the gVisor sandbox. Tests for baseline generator, api runs, and transformer acceptance suite are fully passing. Linter and typechecks are passing.
+B01/B05/B07/B12 remain partial; B08, B09, and B10 are complete.
+Current Phase: Milestone B10 (Dashboard specification, query broker, fallback UI)
+Status: Completed! Validated specification generation conforming to v1 limits, secure query broker over cleaned dataset artifacts, and accessible React fallback UI with SVG charts and pagination are fully tested and verified against PostgreSQL.
 
-Next concrete action: B10 (Analysis rendering & layout). We'll design the React UI to display cleaning profiles and baseline models.
-Wait for user sign-off to proceed to B10.
+Next concrete action: Milestone B11 (Generated React pipeline): isolated compilation of generated React dashboard components in sandbox, iframe bridge with CSP, and end-to-end integration.
 
 ## Local operations and source control
 

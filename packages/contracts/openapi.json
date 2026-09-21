@@ -145,6 +145,56 @@
         "title": "Capabilities",
         "type": "object"
       },
+      "ChartSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "chart_type": {
+            "enum": [
+              "bar",
+              "line",
+              "scatter",
+              "histogram"
+            ],
+            "title": "Chart Type",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "query_id": {
+            "title": "Query Id",
+            "type": "string"
+          },
+          "summary": {
+            "default": "",
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "x_axis": {
+            "title": "X Axis",
+            "type": "string"
+          },
+          "y_axis": {
+            "title": "Y Axis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "chart_type",
+          "query_id",
+          "x_axis",
+          "y_axis"
+        ],
+        "title": "ChartSpec",
+        "type": "object"
+      },
       "ColumnProfile": {
         "additionalProperties": false,
         "properties": {
@@ -214,6 +264,212 @@
           "top_values"
         ],
         "title": "ColumnProfile",
+        "type": "object"
+      },
+      "DashboardQueryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "default": 0,
+            "title": "Cursor",
+            "type": "integer"
+          },
+          "filters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FilterValue"
+            },
+            "title": "Filters",
+            "type": "object"
+          },
+          "page_size": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "query_id": {
+            "title": "Query Id",
+            "type": "string"
+          },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort By"
+          },
+          "sort_direction": {
+            "default": "asc",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "title": "Sort Direction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query_id"
+        ],
+        "title": "DashboardQueryRequest",
+        "type": "object"
+      },
+      "DashboardQueryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "query_id": {
+            "title": "Query Id",
+            "type": "string"
+          },
+          "sample_indicator": {
+            "default": false,
+            "title": "Sample Indicator",
+            "type": "boolean"
+          },
+          "total_matching_rows": {
+            "title": "Total Matching Rows",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query_id",
+          "data",
+          "total_matching_rows"
+        ],
+        "title": "DashboardQueryResponse",
+        "type": "object"
+      },
+      "DashboardSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "charts": {
+            "items": {
+              "$ref": "#/components/schemas/ChartSpec"
+            },
+            "maxItems": 6,
+            "title": "Charts",
+            "type": "array"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "filters": {
+            "items": {
+              "$ref": "#/components/schemas/FilterSpec"
+            },
+            "maxItems": 4,
+            "title": "Filters",
+            "type": "array"
+          },
+          "kpis": {
+            "items": {
+              "$ref": "#/components/schemas/KpiSpec"
+            },
+            "maxItems": 6,
+            "title": "Kpis",
+            "type": "array"
+          },
+          "model_report_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Report Ref"
+          },
+          "schema_version": {
+            "const": "1",
+            "default": "1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "table": {
+            "$ref": "#/components/schemas/TableSpec"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "title",
+          "summary",
+          "table"
+        ],
+        "title": "DashboardSpec",
+        "type": "object"
+      },
+      "DashboardView": {
+        "additionalProperties": false,
+        "properties": {
+          "render_mode": {
+            "default": "fallback",
+            "enum": [
+              "generated",
+              "fallback"
+            ],
+            "title": "Render Mode",
+            "type": "string"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "spec": {
+            "$ref": "#/components/schemas/DashboardSpec"
+          },
+          "status": {
+            "default": "ready",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "spec"
+        ],
+        "title": "DashboardView",
         "type": "object"
       },
       "DatasetPage": {
@@ -322,6 +578,114 @@
           "token"
         ],
         "title": "Exchange",
+        "type": "object"
+      },
+      "FilterSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_operators": {
+            "default": [
+              "eq",
+              "in"
+            ],
+            "items": {
+              "enum": [
+                "eq",
+                "in",
+                "between",
+                "gte",
+                "lte"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Operators",
+            "type": "array"
+          },
+          "column": {
+            "title": "Column",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "max_val": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Val"
+          },
+          "min_val": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Val"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "type": {
+            "enum": [
+              "category",
+              "range",
+              "date"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "column",
+          "label",
+          "type"
+        ],
+        "title": "FilterSpec",
+        "type": "object"
+      },
+      "FilterValue": {
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "enum": [
+              "eq",
+              "in",
+              "between",
+              "gte",
+              "lte"
+            ],
+            "title": "Operator",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "operator",
+          "value"
+        ],
+        "title": "FilterValue",
         "type": "object"
       },
       "Health": {
@@ -542,6 +906,56 @@
           "revisions"
         ],
         "title": "InspectionView",
+        "type": "object"
+      },
+      "KpiSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "format": {
+            "default": "number",
+            "enum": [
+              "number",
+              "currency",
+              "percent",
+              "text"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "value"
+        ],
+        "title": "KpiSpec",
         "type": "object"
       },
       "ProfileReport": {
@@ -1109,6 +1523,50 @@
           "preview"
         ],
         "title": "TablePreview",
+        "type": "object"
+      },
+      "TableSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "default_sort": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Sort"
+          },
+          "page_size": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "sort_direction": {
+            "default": "asc",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "title": "Sort Direction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "columns"
+        ],
+        "title": "TableSpec",
         "type": "object"
       },
       "TopValue": {
@@ -3352,6 +3810,236 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/runs/{run_id}/dashboard": {
+      "get": {
+        "operationId": "get_dashboard_api_v1_projects__project_id__runs__run_id__dashboard_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Dashboard",
+        "tags": [
+          "Synthetic runs"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/runs/{run_id}/queries": {
+      "post": {
+        "operationId": "query_dashboard_api_v1_projects__project_id__runs__run_id__queries_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardQueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardQueryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Query Dashboard",
+        "tags": [
+          "Synthetic runs"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}": {
       "get": {
         "operationId": "detail_api_v1_runs__run_id__get",
@@ -3538,6 +4226,116 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}/dashboard": {
+      "get": {
+        "operationId": "get_dashboard_api_v1_runs__run_id__dashboard_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Dashboard",
+        "tags": [
+          "Synthetic runs"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/events": {
       "get": {
         "operationId": "events_api_v1_runs__run_id__events_get",
@@ -3647,6 +4445,126 @@
           }
         },
         "summary": "Events",
+        "tags": [
+          "Synthetic runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/queries": {
+      "post": {
+        "operationId": "query_dashboard_api_v1_runs__run_id__queries_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardQueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardQueryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Query Dashboard",
         "tags": [
           "Synthetic runs"
         ]
